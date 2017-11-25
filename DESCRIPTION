@@ -1,4 +1,4 @@
-Package: gheckman
+Package: MultivariateSwitch
 Type: Package
 Title: Estimates multivariate selection-switch models via two-step and maximum likelihood procedures
 Version: 0.1.0
