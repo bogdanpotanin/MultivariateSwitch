@@ -1,4 +1,4 @@
-.triangular<-function(triangularPart,diagonalPart)
+triangular<-function(triangularPart,diagonalPart)
 {
   triangularPart=as.matrix(triangularPart)
   diagonalPart=as.matrix(diagonalPart)
