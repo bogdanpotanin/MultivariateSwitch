@@ -134,7 +134,7 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
     }
     #Calculating argument for multinominal normal probability
     k[[i]]<-sweep((z[[i]]+meanCond),MARGIN=2,as.vector(zo[[i]]),'*');
-    if (ns[i]==2) 
+    if (ns[i]==2)
       {
         rho=SigmaCond[[i]][1,2]/sqrt(SigmaCond[[i]][1,1]*SigmaCond[[i]][2,2]);#correlation for standtadtised distribution
         if (abs(rho)<=0.99) {observed1[[i]]=pbivnorm(x = cbind(k[[i]][,1]/sqrt(SigmaCond[[i]][1,1]), k[[i]][,2]/sqrt(SigmaCond[[i]][2,2])), rho = rho);}
@@ -248,7 +248,7 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
           rhoYGradient[[group[i]]][j]=rhoYGradient[[group[i]]][j]-sum(dFdrhoYj);
           #Gradient for sigma mvncdf argument part
           sigmaGradient[group[i],1]=sigmaGradient[group[i],1]+(dFdrhoYj*rhoY[[group[i]]][j])/sigma[group[i],1];
-        }  
+        }
       }
       #Gradient for beta: mvnpdf part
       if (group[i]!=0)
@@ -271,7 +271,7 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
     }
     for (i in 1:noutcome)
     {
-      g=c(g,t(betaGradient[[i]]));    
+      g=c(g,t(betaGradient[[i]]));
     }
     for (i in 1:nsMax)
     {
@@ -317,8 +317,4 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
 gheckmanGradient<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngroup, nsMax, zo3Converter, noutcome, zo3, groupsize, nrhoY, ShowInfo=FALSE, maximization=FALSE)
 {
   return(gheckmanLikelihood(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngroup, nsMax, zo3Converter, noutcome, zo3, groupsize, nrhoY, ShowInfo=FALSE, maximization=FALSE)[[2]])
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> dc54057d1c384284527c20bf4951eeaf13f08c26
