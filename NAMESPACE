@@ -1,1 +1,1 @@
-export("gheckman").
+exportPattern("^[[:alpha:]]+")
