@@ -317,4 +317,8 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
 gheckmanGradient<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngroup, nsMax, zo3Converter, noutcome, zo3, groupsize, nrhoY, ShowInfo=FALSE, maximization=FALSE)
 {
   return(gheckmanLikelihood(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngroup, nsMax, zo3Converter, noutcome, zo3, groupsize, nrhoY, ShowInfo=FALSE, maximization=FALSE)[[2]])
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> dc54057d1c384284527c20bf4951eeaf13f08c26
