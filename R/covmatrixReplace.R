@@ -10,9 +10,3 @@ covmatrixReplace<-function(sigma,newOrder)
     }
   return(sigmaNew)
 }
-
-install("D:/gheckmanPackage/gheckman/gheckman")
-library("devtools")
-library("roxygen2")
-library("knitr")
-create(path = "D:/gheckmanPackage/gheckman")

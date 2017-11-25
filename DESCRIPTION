@@ -1,11 +1,11 @@
 Package: gheckman
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Estimates multivariate selection-switch models via two-step and maximum likelihood procedures
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Author: Potanin B.S.
+Maintainer: The package maintainer <bogdanpotanin@gmail.com>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: GPL-3.0
 Encoding: UTF-8
 LazyData: true
