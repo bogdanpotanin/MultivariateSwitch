@@ -1,4 +1,25 @@
-#' Estimates Multivariate Selection-Switch model via two-step and maximum likelihood procedures
+#' Use this function to estimate Multivariate Switch model
+#' @param data data frame containing the variables in the model
+#' @param outcome main (continious) equation formula
+#' @param selection1 the first selecton equation formula
+#' @param selection2 the second selecton equation formula
+#' @param selection3 the third selecton equation formula
+#' @param selection4 the fourth selecton equation formula
+#' @param selection5 the fifth selecton equation formula
+#' @param group vector which determines outcome to each group
+#' @param zo3 matrix which rows correspond to possible combination of selection equations values.
+#' @param ShowInfo shows likelihood function optimization info
+#' @param onlyTwostep if true then only two-step procedure used
+#' @param opts options that are passed to nlopt
+#' @param x0 optional initial values to be used while solving optimization task
+#' @details This function estimates Multivariate Switch model via maximum-likelihood and two-step procedures.
+#' This model was developed by Kossova E.V. and Potanin B.S.
+#' Dependent variables in selection equations should have values -1 or 1.
+#' Also there is a special value 0 which indicates that this observation is unobservable but it is necessary
+#' to take into consideration other selection equation information while calculating likelihood function.
+#' The i-th row of zo3 corresponds to i-th element of group. zo3 rows should contain information regarding
+#' possible combinations of selection equations values. While group determines the outcome for each of this
+#' possible combinations. Special 0 value for group responsible for sample selection.
 gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL, selection4=NULL, selection5=NULL, group=NULL, zo3=NULL, ShowInfo=TRUE, onlyTwostep=FALSE, opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-08, "print_level" = 1, maxeval = 1000000), x0=NULL)
 {
 #PHASE 0: Extracting data from formulas

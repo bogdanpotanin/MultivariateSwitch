@@ -2,7 +2,7 @@
 % Please edit documentation in R/gheckman.R
 \name{gheckman}
 \alias{gheckman}
-\title{Estimates Multivariate Selection-Switch model via two-step and maximum likelihood procedures}
+\title{Use this function to estimates Multivariate Switch model}
 \usage{
 gheckman(data, outcome, selection1 = NULL, selection2 = NULL,
   selection3 = NULL, selection4 = NULL, selection5 = NULL, group = NULL,
@@ -10,6 +10,9 @@ gheckman(data, outcome, selection1 = NULL, selection2 = NULL,
   opts = list(algorithm = "NLOPT_LD_TNEWTON", xtol_rel = 1e-08, print_level =
   1, maxeval = 1e+06), x0 = NULL)
 }
+\arguments{
+\item{data}{frame containing the variables in the model}
+}
 \description{
-Estimates Multivariate Selection-Switch model via two-step and maximum likelihood procedures
+Use this function to estimates Multivariate Switch model
 }
