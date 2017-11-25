@@ -20,3 +20,4 @@ Imports:
     clusterGeneration,
     lmtest,
     pbivnorm
+RoxygenNote: 6.0.1

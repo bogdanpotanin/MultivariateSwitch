@@ -1,13 +1,10 @@
+#' Estimates Multivariate Selection-Switch model via two-step and maximum likelihood procedures
 gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL, selection4=NULL, selection5=NULL, group=NULL, zo3=NULL, ShowInfo=TRUE, onlyTwostep=FALSE, opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-08, "print_level" = 1, maxeval = 1000000), x0=NULL)
 {
 #PHASE 0: Extracting data from formulas
 yh=model.frame(formula = outcome, data=data, na.action = NULL);#data for main equation
 n=length(yh[,1]);#total number of observations
 yh[rowSums(is.na(yh))>0,]=NA;#remove y that could not be calculated
-#yh[is.na(yh[,1]),1]=pi;#remove NA from y for time
-#NAind=rowSums(is.na(yh))>0 & yh[,1]!=pi#get indexes of raws with NA where y could not be calculated
-#yh=na.omit(yh);#clean data from ommited variables
-#yh[yh[,1]==pi,1]=NA;#return ommitments to data
 y=yh[,1];#independend variable
 yh[,1]=1;#intercept
 colnames(yh)[1]="intercept";
@@ -20,17 +17,13 @@ for (i in 1:5)#for each possible selection equation
   if (!is.null(get(selection)))#if this selection equation assigned
   {
     zh[[i]]=model.frame(formula = as.formula(get(selection)), data=data, na.action = NULL)
-    #NAindZ=rowSums(is.na(zh[[i]]))>0#get indexes of raws with NA
-    #zh[[i]][NAind,]=NA;#remove rows where y could not be calculated but has value
-    #zh[[i]][is.na(zh[[i]][,1]),1]=0;#ommited values conversion to 0 code
-    #zh[[i]]=na.omit(zh[[i]]);
     zh[[i]][rowSums(is.na(zh[[i]]))>0,]=NA;#remove z that could not be calculated
     z[,i]=zh[[i]][,1];
     zh[[i]][,1]=rep(1,n);#intercept
     colnames(zh[[i]])[1]="intercept";
     zh[[i]][is.na(zh[[i]])]=0;
   }
-  else 
+  else
   {
     zh=zh[1:(i-1)];#preserve only existing selection equation
     z=z[,1:(i-1)];
@@ -81,8 +74,6 @@ lb=c(rep(-0.9999999,nrhoZ),rep(0,numberOfParametersY-nrhoZ),rep(-Inf,numberOfPar
 ub=c(rep(0.9999999,nrhoZ),rep(0,numberOfParametersY-nrhoZ),rep(Inf,numberOfParameters-ndz[[1]][1]+1));
 #Estimate coefficients and store them to x0
 f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group*0, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE);
-#f<-optim(par = x0, fn = gheckmanF, gr = gheckmanG, lower = lb, upper = ub, hessian = TRUE, method = "L-BFGS-B",  control = list(maxit=100000),
-#y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group*0, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE)
 x0=f$solution;
 #x0=f$par;
 #Storing covariance matrix
@@ -149,7 +140,7 @@ counterz=0;
       }
     }
   }
- }  
+ }
 }
 #Combining lambda by group into lambda by outcome
 lambda_zG=lambda_z; lambda_z=matrix(list(), noutcome, 1);
@@ -178,10 +169,9 @@ yh1=matrix(list(), noutcome, 1);
 for (i in 1:ngroup)
 {
   if (group[i]!=0)
-  { 
+  {
     y1[[group[i]]]=rbind(y1[[group[i]]],y[[i]]);
     yh1[[group[i]]]=rbind(yh1[[group[i]]],yh[[i]]);
-    #if (!is.null(colnames(yh1[[group[i]]]))) {colnames(yh1[[group[i]]])=colnames(yh[[i]]);}#if it is no colum names
   }
 }
 twostep=matrix(list(), noutcome, 1);
@@ -199,7 +189,6 @@ for (i in 1:noutcome)
 {
 X[[i]]=data.frame(yh1[[i]],lambda_z[[i]])
 model=lm(y1[[i]]~.,data=X[[i]][,-1]);
-print(summary(model))
 twostep[[i]]=model;
 nCoef[i]=length(x0[coef[[i]]])
 x0[coef[[i]]]=coef(model)[1:nCoef[i]];#coefficients
@@ -207,7 +196,7 @@ coefLambda=coef(model)[(nCoef[i]+1):length(coef(model))];#coefficients
 coefLambda[is.na(coefLambda)]=0;
 parameters[coef[[i]]]=variable.names(model)[1:nCoef[i]];#Store coefficients names
 Ggamma[[i]]=matrix(0,length(y1[[i]]),sum(nzh));
-#sigma and Г calculation
+#sigma and ? calculation
 startCoef1=1;
 yVariance[[i]]=0;
 yVariance[[i]]=lambda_zTilde[[i]]%*%coefLambda^2+
@@ -230,10 +219,9 @@ for (t in (1:ngroup)[group==i])#For each group corresponding to this outcome
         if (zo3[t,j]!=0)
         {
           counterz1=counterz1+1
-          if (k!=j) 
+          if (k!=j)
           {
             yVariance[[i]][startCoef1:endCoef1]=yVariance[[i]][startCoef1:endCoef1]-coefLambda[k]*z[[t]][,counterz]*z[[t]][,counterz1]*(coefLambda[j]-Sigma0[k,j]*coefLambda[k])*LAMBDAG[[t]][,k,j];
-            #Ggamma[[i]][,startCoef:endCoef]=Ggamma[[i]][,startCoef:endCoef]+coefLambda[j]*z[[t]][,counterz]*z[[t]][,counterz1]*(LAMBDAG[[t]][,k,j]-lambdaG[[t]][,k]*lambdaG[[t]][,j])-coefLambda[k]*LAMBDAG[[t]][,k,j]*z[[t]][,counterz]*z[[t]][,counterz1]*Sigma0[k,j];
             l=l+coefLambda[j]*z[[t]][,counterz]*z[[t]][,counterz1]*(LAMBDAG[[t]][,k,j]-lambdaG[[t]][,k]*lambdaG[[t]][,j])-coefLambda[k]*LAMBDAG[[t]][,k,j]*z[[t]][,counterz]*z[[t]][,counterz1]*Sigma0[k,j];
           }
         }
@@ -274,43 +262,10 @@ twostep[[i]]=summary(twostep[[i]]);
 twostep[[i]]$coefficients=newCoefs;
 twostep[[i]]$sigma=sigma[i];
 }
-#Mapping coefficients
-#zCoef=matrix(list(), noutcome)
-#for (i in 1:noutcome)
-#{
-  #zCoef[[i]]=matrix(0,nsMax,nCoef[[i]]);
-  #for (j in 1:nsMax)
-  #{
-    #for (k in 1:nCoef[i])
-    #{
-      #if (colnames(yh1[[i]])[k] %in% zhColnames[[j]])#не оптимально что два раза ищет
-      #{
-        #zCoef[[i]][j,k]=x0[ndz[[j]][which(zhColnames[[j]]==colnames(yh1[[i]])[k])]];
-      #}
-    #}
-  #}
-#}
-###############
-#print(twostep[[2]]$coefficients)
-#predictions2=cbind(yh1[[2]],lambda[[2]])%*%c(11.213472,11.943909,12.045587,-3.517325,7.492551,4.439684);
-###############
 if (noutcome==1)
 {
   twostep=twostep[[1]];
 }
-#Marginal effects for twostep
-#ME=lambda;#sharable part of marginal effects
-#MarginalEffects=matrix(list(),noutcome)#marginal effects for each coefficient
-#for (i in 1:noutcome)
-#{
-  #ME[[i]]=lambda1[[i]]^2+lambda3[[i]];
-  #MarginalEffects[[i]]=matrix(0,nrow=length(lambda[[i]][,1]),ncol=nCoef[i]);
-  #ME[[i]]=sweep(ME[[i]]+lambda2[[i]],MARGIN=2,rhoSigma[[i]],'*');
-  #for (j in 1:nCoef[[i]])
-  #{
-    #MarginalEffects[[i]][,j]=x0[coef[[i]]][j]-ME[[i]]%*%zCoef[[i]][,j];
-  #}
-#}
 if (onlyTwostep) {return(list("model"=twostep, "covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS));}
 #PAHSE 3: MLE with Two-step initial values
 #Set lower and upper bound constraints for parameters
@@ -318,7 +273,7 @@ rhoSize=nSigma-noutcome;
 sizeAboveRho=length(x0)-rhoSize;
 lb=(c(rep(-1,rhoSize),rep(-Inf,sizeAboveRho)));
 ub=(c(rep(1,rhoSize),rep(Inf,sizeAboveRho)));
-x0[is.na(x0)]=0;#May cause some problems!!!!!!!!!!!!!!
+x0[is.na(x0)]=0;
 #Estimate coefficients and store them to MLE
 f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE);
 stdev=jacobian(func = gheckmanGradient, x = f$solution, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=FALSE);
@@ -358,10 +313,6 @@ for (i in 1:noutcome)
   parameters[counter]=paste(c("sigma",i), collapse = " ");
 }
 #Calculating lambda for MLE
-####################################
-####################################
-####################################
-####################################
 #Calculating lambda
 zTilde=matrix(list(), ngroup, 1);
 lambda_z=matrix(list(), ngroup, 1);
@@ -423,7 +374,7 @@ for (i in 1:ngroup)
         }
       }
     }
-  }  
+  }
 }
 #Combining lambda by group into lambda by outcome
 lambda_zG=lambda_z; lambda_z=matrix(list(), noutcome, 1);
@@ -452,7 +403,7 @@ yh1=matrix(list(), noutcome, 1);
 for (i in 1:ngroup)
 {
   if (group[i]!=0)
-  { 
+  {
     y1[[group[i]]]=rbind(y1[[group[i]]],y[[i]]);
     yh1[[group[i]]]=rbind(yh1[[group[i]]],yh[[i]]);
     #if (!is.null(colnames(yh1[[group[i]]]))) {colnames(yh1[[group[i]]])=colnames(yh[[i]]);}#if it is no colum names
