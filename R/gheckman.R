@@ -300,6 +300,7 @@ f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, zh=zh, 
 stdev=jacobian(func = gheckmanGradient, x = f$solution, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=FALSE);
 stdev=sqrt(diag(solve(stdev)));
 solution=f$solution;
+x0=f$solution;
 aSTD=pnorm(solution/stdev);
 bSTD=pnorm(-solution/stdev);
 pvalue=x0*0;
@@ -416,18 +417,6 @@ for (i in 1:ngroup)
     LAMBDA[[group[i]]]=abind(LAMBDA[[group[i]]],LAMBDAG[[i]],along=1);
     zOutcome[[group[i]]]=rbind(zOutcome[[group[i]]],zG[[i]]);
     zTildeOutcome[[group[i]]]=rbind(zTildeOutcome[[group[i]]],zTildeG[[i]]);
-  }
-}
-#Combining y and yh by outcome
-y1=matrix(list(), noutcome, 1);
-yh1=matrix(list(), noutcome, 1);
-for (i in 1:ngroup)
-{
-  if (group[i]!=0)
-  {
-    y1[[group[i]]]=rbind(y1[[group[i]]],y[[i]]);
-    yh1[[group[i]]]=rbind(yh1[[group[i]]],yh[[i]]);
-    #if (!is.null(colnames(yh1[[group[i]]]))) {colnames(yh1[[group[i]]])=colnames(yh[[i]]);}#if it is no colum names
   }
 }
 result=noquote(cbind(parameters,f$solution,stdev,pvalue));
