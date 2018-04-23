@@ -22,6 +22,7 @@
 #' possible combinations. Special 0 value for group responsible for sample selection.
 gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL, selection4=NULL, selection5=NULL, group=NULL, zo3=NULL, ShowInfo=TRUE, onlyTwostep=FALSE, opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-16, "print_level" = 1, maxeval = 1000000), x0=NULL)
 {
+print("Version 1.0.0")
 #PHASE 0: Extracting data from formulas
 yh=model.frame(formula = outcome, data=data, na.action = NULL);#data for main equation
 n=length(yh[,1]);#total number of observations
