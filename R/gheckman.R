@@ -33,7 +33,6 @@ colnames(yh)[1]="intercept";
 #Data for selection equations
 zh=matrix(list(),5,1)#selection equation independent variables
 z=matrix(NA,n,5);#selection equation dedepndent variables
-print(length(na.omit(y)))
 for (i in 1:5)#for each possible selection equation
 {
   selection=paste("selection",toString(i),sep="");#name of current selection equation
