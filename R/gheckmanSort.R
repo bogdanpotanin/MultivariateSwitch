@@ -18,7 +18,7 @@ gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL)
     zo3=zo3Full[,-1]#removing column corresponding to y
     #Here may be the problem when for the same zo3 y could be either observable or not
   }
-  else 
+  else
     {
       group=matrix(as.vector(group),1,NROW(zo3));
       zo3Full=as.matrix(cbind(t(group),zo3));
@@ -88,11 +88,6 @@ gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL)
   {
     nzh[i]=NCOL(zh[[i]]);
   }
-  nyh=rep(0,noutcome);#number of variables in yh[[i]]
-  for (i in 1:noutcome)
-  {
-    nyh[i]=NCOL(yh[[i]]);#+1 because of constant
-  }
   #PHASE 3: Grouping variables
   #Clearing in order to split among groups
   yh=matrix(list(), ngroup, 1)
@@ -107,25 +102,28 @@ gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL)
     #h$sortRank[apply(h1[,2:(nsMax+1)],1,function(x) all(x==zo3Full[i,]))]=i;
     h$sortRank[apply(h1,1,function(x) all(x==zo3Full[i,]))]=i;
   }
-  h1<-NULL#free memmory 
+  h1<-NULL#free memmory
   #Sorting according to ranking variable
   h=h[with(h, order(sortRank)),];
   #Division of z and yh according to groups
+  nyh=rep(0,noutcome);#number of variables in yh[[i]]
   for (i in 1:ngroup)
   {
     y[[i]]=as.matrix(h$y[h$sortRank==i]);
     if (group[i]!=0)
     {
       yh[[i]]=h[yhstr[[group[i]]]][h$sortRank==i,];
+      yh[[i]]=yh[[i]][,which(colSums(abs(yh[[i]]), na.rm = TRUE)>0)]
+      nyh[group[i]]=NCOL(yh[[i]])
     }
     counterz=0;
-    if (nsMax>1) 
+    if (nsMax>1)
     {
       zPseudo=h[,2:(nsMax+1)][h$sortRank==i,];
       z[[i]]=matrix(ncol=ns[i],nrow=dim(zPseudo)[1]);#Preinitialization
     }
-    
-    else 
+
+    else
     {
       zPseudo=matrix(h[,2:(nsMax+1)][h$sortRank==i],ncol=1);
       z[[i]]=matrix(ncol=ns[i],nrow=length(zPseudo));#Preinitialization
@@ -169,7 +167,7 @@ gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL)
   {
     groupsize[i]=NROW(y[[i]]);
   }
-  return(list('y'=y, 'yh'=yh, 'z'=z, 'zh'=zh, 'group'=group, 'zo3'=zo3, 'ngroup'=ngroup, 'noutcome'=noutcome, 
-              'zo3Converter'=zo3Converter, 'zo'=zo, 'ns'=ns, 'nSigma'=nSigma, 'nsMax'=nsMax, 'coef'=coef, 
+  return(list('y'=y, 'yh'=yh, 'z'=z, 'zh'=zh, 'group'=group, 'zo3'=zo3, 'ngroup'=ngroup, 'noutcome'=noutcome,
+              'zo3Converter'=zo3Converter, 'zo'=zo, 'ns'=ns, 'nSigma'=nSigma, 'nsMax'=nsMax, 'coef'=coef,
               'ndz'=ndz, 'groupsize'=groupsize, 'nyh'=nyh, 'nzh'=nzh, 'nrhoY'=nrhoY))
 }

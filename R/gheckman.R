@@ -288,7 +288,7 @@ if (noutcome==1)
 {
   twostep=twostep[[1]];
 }
-if (onlyTwostep) {return(list("model"=twostep, "covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS));}
+if (onlyTwostep) {return(list("model"=twostep, "covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, "sortList"=sortList));}
 #PAHSE 3: MLE with Two-step initial values
 #Set lower and upper bound constraints for parameters
 rhoSize=nSigma-noutcome;

@@ -1,4 +1,4 @@
-simulation <- function(n, x=NULL, nX=NULL, y.index, z.index, group, zo3, beta=NULL, alpha=NULL, sigmaX=NULL, sigma=NULL, betaRange=NULL, sigmaRange=c(0,1))
+simulation <- function(n, x=NULL, nX=NULL, y.index, z.index, group, zo3, beta=NULL, alpha=NULL, sigmaX=NULL, sigma=NULL, betaRange=NULL, sigmaRange=c(0,1), sigmaCor=FALSE)
 {
   if (is.null(nX)) nX=NCOL(x)
   #Number of selection equations
@@ -7,7 +7,7 @@ simulation <- function(n, x=NULL, nX=NULL, y.index, z.index, group, zo3, beta=NU
   ngroup=length(group)
   maxGroup=max(group)
   #Gegerating exogeneous variables
-  if (is.null(sigmaX)) 
+  if (is.null(sigmaX))
     {
       sigmaX=genPositiveDefMat(nX, rangeVar = sigmaRange, covMethod = "onion")$Sigma
       for (i in 1:nX) #Standartising
