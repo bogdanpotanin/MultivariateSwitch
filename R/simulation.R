@@ -105,9 +105,11 @@ simulation <- function(n, x=NULL, nX=NULL, y.index, z.index, group, zo3, beta=NU
   }
   #Main variable
   y=matrix(NA,n,1);
+  epsilon=matrix(list(), ngroup, 1);
   for (i in 1:ngroup)
   {
+    epsilon[[i]]=disturbances[groupMembership[,i],]
     if (group[i]!=0) y[groupMembership[,i],]=yh[[group[i]]][groupMembership[,i],]%*%beta[[group[i]]]+disturbances[groupMembership[,i],ns+group[i]]
   }
-  return(list('y'=y, 'X'=x, 'yh'=yh,'z'=z,'zh'=zh,'group'=group,'zo3'=zo3,'beta'=beta,'alpha'=alpha,'sigma'=sigma,'sigmaX'=sigmaX))
+  return(list('y'=y, 'X'=x, 'yh'=yh,'z'=z,'zh'=zh,'group'=group,'zo3'=zo3,'beta'=beta,'alpha'=alpha,'sigma'=sigma,'sigmaX'=sigmaX,"epsilon"=epsilon))
 }
