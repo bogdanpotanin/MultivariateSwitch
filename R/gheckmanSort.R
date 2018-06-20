@@ -1,4 +1,4 @@
-gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL)
+gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL, removeZeroColumns=FALSE)
 {
   #PHASE 1: Preparing data
   #Assigning main variables
@@ -113,7 +113,7 @@ gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL)
     if (group[i]!=0)
     {
       yh[[i]]=h[yhstr[[group[i]]]][h$sortRank==i,];
-      yh[[i]]=yh[[i]][,which(colSums(abs(yh[[i]]), na.rm = TRUE)>0)]
+      if(removeZeroColumns) {yh[[i]]=yh[[i]][,which(colSums(abs(yh[[i]]), na.rm = TRUE)>0)]}
       nyh[group[i]]=NCOL(yh[[i]])
     }
     counterz=0;
