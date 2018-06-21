@@ -20,7 +20,7 @@
 #' The i-th row of zo3 corresponds to i-th element of group. zo3 rows should contain information regarding
 #' possible combinations of selection equations values. While group determines the outcome for each of this
 #' possible combinations. Special 0 value for group responsible for sample selection.
-gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL, selection4=NULL, selection5=NULL, group=NULL, zo3=NULL, ShowInfo=TRUE, onlyTwostep=FALSE, opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-16, "print_level" = 1, maxeval = 1000000), x1=NULL)
+gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL, selection4=NULL, selection5=NULL, group=NULL, zo3=NULL, ShowInfo=TRUE, onlyTwostep=FALSE, opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-16, "print_level" = 1, maxeval = 1000000), x1=NA)
 {
 print("Version 1.0.0")
 #PHASE 0: Extracting data from formulas
@@ -297,7 +297,7 @@ lb=(c(rep(-1,rhoSize),rep(-Inf,sizeAboveRho)));
 ub=(c(rep(1,rhoSize),rep(Inf,sizeAboveRho)));
 x0[is.na(x0)]=0;
 #Estimate coefficients and store them to MLE
-if (!is.null(x1)) {x0=x1};#substitute some initial value
+if (!is.na(x1)) {x0<-x1};#substitute some initial value
 f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE);
 stdev=jacobian(func = gheckmanGradient, x = f$solution, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=FALSE);
 CovM=solve(stdev)
