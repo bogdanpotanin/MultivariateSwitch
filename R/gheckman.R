@@ -95,8 +95,7 @@ z=sortList[[3]];#Only now we can load it from sort method result
 lb=c(rep(-0.9999999,nrhoZ),rep(0,numberOfParametersY-nrhoZ),rep(-Inf,numberOfParameters-ndz[[1]][1]+1));
 ub=c(rep(0.9999999,nrhoZ),rep(0,numberOfParametersY-nrhoZ),rep(Inf,numberOfParameters-ndz[[1]][1]+1));
 #Estimate coefficients and store them to x0
-#f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group*0, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE);
-f<-nloptr(x0=x0, eval_f=gheckmanLikelihood, opts=opts lb=lb, ub=ub, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group*0, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE);
+f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group*0, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE);
 x0=f$solution;
 #x0=f$par;
 #Storing covariance matrix
