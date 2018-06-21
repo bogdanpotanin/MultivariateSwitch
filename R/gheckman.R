@@ -73,12 +73,12 @@ nzh=sortList[[18]];
 nrhoY=sortList[[19]];
 nrhoZ=sum(1:(nsMax-1));
 rhoSigma=matrix(list(),noutcome);
-parameters=vector(length = length(x0));#Store variables names
 opts = opts;#setting optimization options max(maxeval/15,nsMax*50)
 #PHASE 2: Two-step method
 numberOfParameters=ndz[[nsMax]][dim(ndz[[nsMax]])[1]]
 numberOfParametersY=coef[[noutcome]][dim(coef[[noutcome]])[1]]
 x0=matrix(0,numberOfParameters);
+parameters=vector(length = length(x0));#Store variables names
 #get initial values
 if (nsMax==1) {z=matrix(z,ncol=1);}
 for (i in 1:nsMax)
