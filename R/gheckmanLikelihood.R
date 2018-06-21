@@ -68,7 +68,7 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
   {
     for (i in 1:noutcome)
     {
-      SigmaPositively=SigmaPositively+is.positive.definite(as.matrix(Sigma[[i]]), tol=1e-1);
+      SigmaPositively=SigmaPositively+is.positive.definite(as.matrix(Sigma[[i]]), tol=1e-16);
     }
   }
   else {if (is.positive.semi.definite(Sigma0)){SigmaPositively=noutcome;}}
