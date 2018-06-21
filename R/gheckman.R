@@ -298,7 +298,7 @@ lb=(c(rep(-1,rhoSize),rep(-Inf,sizeAboveRho)));
 ub=(c(rep(1,rhoSize),rep(Inf,sizeAboveRho)));
 x0[is.na(x0)]=0;
 #Estimate coefficients and store them to MLE
-if (!is.null(x1)) (x0=x1);#substitute some initial value
+if (!is.null(x1)) {x0=x1};#substitute some initial value
 f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=ShowInfo, maximization=FALSE);
 stdev=jacobian(func = gheckmanGradient, x = f$solution, y=y, zh=zh, yh=yh, zo=zo, ns=ns, ndz=ndz, nSigma=nSigma, coef=coef, group=group, ngroup=ngroup, nsMax=nsMax, zo3Converter=zo3Converter, noutcome=noutcome, zo3=zo3, groupsize=groupsize, nrhoY=nrhoY, ShowInfo=FALSE);
 CovM=solve(stdev)
