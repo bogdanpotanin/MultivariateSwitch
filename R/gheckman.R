@@ -20,7 +20,7 @@
 #' The i-th row of zo3 corresponds to i-th element of group. zo3 rows should contain information regarding
 #' possible combinations of selection equations values. While group determines the outcome for each of this
 #' possible combinations. Special 0 value for group responsible for sample selection.
-gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL, selection4=NULL, selection5=NULL, group=NULL, zo3=NULL, ShowInfo=TRUE, onlyTwostep=FALSE, opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-16, "print_level" = 1, maxeval = 1000000), x1=NULL)
+gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL, selection4=NULL, selection5=NULL, group=NULL, zo3=NULL, ShowInfo=TRUE, onlyTwostep=FALSE, opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-16, "print_level" = 1, maxeval = 1000000), x1=NULL, removeZeroColumns=FALSE)
 {
 print("Version 1.0.0")
 #PHASE 0: Extracting data from formulas
@@ -53,7 +53,7 @@ for (i in 1:5)#for each possible selection equation
   }#if it is no such selection equation
 }
 #PHASE 1: Preparing data
-sortList<-gheckmanSort(y, yh, z, zh, group, zo3);
+sortList<-gheckmanSort(y, yh, z, zh, group, zo3, removeZeroColumns);
 y=sortList[[1]];
 yh=sortList[[2]];
 group=sortList[[5]];
