@@ -425,5 +425,5 @@ for (i in 1:ngroup)
 }
 result=noquote(cbind(parameters,f$solution,stdev,pvalue));
 colnames(result)=c("Parameter","value","stdev","p-value");
-return(list("mle"=list("result" = result, "coefficients"=f$solution,"stdev"=stdev,"p-value"=pvalue,"names"=parameters), "twostep"=list("model"=twostep,"covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, x0="x0_twostep"), "logLikelihood"=-f$objective, "x0"=f$solution,"lambda"=lambdaG, "sortList"=sortList, "CovM"=CovM))
+return(list("mle"=list("result" = result, "coefficients"=f$solution,"stdev"=stdev,"p-value"=pvalue,"names"=parameters), "twostep"=list("model"=twostep,"covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, "x0"=x0_twostep), "logLikelihood"=-f$objective, "x0"=f$solution,"lambda"=lambdaG, "sortList"=sortList, "CovM"=CovM))
 }
