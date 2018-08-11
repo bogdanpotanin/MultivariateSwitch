@@ -1,173 +1,181 @@
-gheckmanSort<-function(y, yh, z, zh, group=NULL, zo3=NULL, removeZeroColumns=FALSE)
+gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, remove_zero_columns=FALSE)
 {
   #PHASE 1: Preparing data
   #Assigning main variables
-  n=NROW(y);#sample size
-  nsMax=NCOL(z);#total number of selection equations
+  n_observations_total=NROW(y);#sample size
+  n_selection_equations=NCOL(z);#total number of selection equations
   z[is.na(z)]=0;#ommited values conversion to 0 code
-  h=data.frame(y,z);#dependend variables data frame
-  h1=h; h1$y[!is.na(h1$y)]=1; h1$y[is.na(h1$y)]=0;#decoding y into observed and not
+  y_and_z=data.frame(y,z);#all dependend variables data frame
+    #decoding y into observed and not
+  y_and_z_rules=y_and_z; 
+  y_and_z_rules$y[!is.na(y_and_z_rules$y)]=1; 
+  y_and_z_rules$y[is.na(y_and_z_rules$y)]=0;
   #If user has not predefined selection mechanism
-  if (is.null(group) || is.null(zo3))
+  if (is.null(groups) || is.null(rules))
   {
-    zo3Full=as.matrix(unique(h1));#left just unique combinations
-    zo3Full[rowSums(abs(zo3Full))==0,]=NA;#remove groups without observations
-    zo3Full=na.omit(zo3Full);
-    group=matrix(1,1,NROW(zo3Full));#creating group variable
-    group[zo3Full[,1]==0]=0;#code 0 where is no observations for y
-    zo3=zo3Full[,-1]#removing column corresponding to y
-    #Here may be the problem when for the same zo3 y could be either observable or not
+    rules_with_y=as.matrix(unique(y_and_z_rules));#left just unique combinations
+    rules_with_y[rowSums(abs(rules_with_y))==0,]=NA;#remove groupss without observations
+    rules_with_y=na.omit(rules_with_y);
+    groups=matrix(1,1,NROW(rules_with_y));#creating groups variable
+    groups[rules_with_y[,1]==0]=0;#code 0 where is no observations for y
+    rules=rules_with_y[,-1]#removing column corresponding to y
+    #Here may be the problem when for the same rules y could be either observable or not
   }
   else
     {
-      group=matrix(as.vector(group),1,NROW(zo3));
-      zo3Full=as.matrix(cbind(t(group),zo3));
-      zo3=as.matrix(zo3Full[,-1]);
+      groups=matrix(as.vector(groups),1,NROW(rules));
+      rules_with_y=as.matrix(cbind(t(groups),rules));
+      rules=as.matrix(rules_with_y[,-1]);
     }
-  print(zo3)
-  zo3Full[zo3Full>1]=1
-  print(zo3Full)
-  print(zo3)
-  print(group)
-  ngroup=length(group);#number of groups
-  noutcome=max(group);#number of outcomes
-  if (noutcome==1) {yh=matrix(list(yh))}#if no switch regression
-  else
-  {
-    yh1=yh; yh=matrix(list(),1,noutcome)
-    for (i in 1:noutcome)
+  rules_with_y[rules_with_y>1]=1
+  print(rules_with_y)
+  print(groups)
+  n_groups=length(groups);#number of groups
+  n_outcome=max(groups);#number of outcomes
+  if (n_outcome==1) #if no switch regression
     {
-      yh[[i]]=yh1;
+      y_variables=matrix(list(y_variables))
+    }
+  else 
+  {
+    y_variables_copy=y_variables;
+    y_variables=matrix(list(),1,n_outcome);
+    for (i in 1:n_outcome)
+    {
+      #each group contains all observations
+      y_variables[[i]]=y_variables_copy;
     }
   }
-  #Creating zo variable
-  zo=matrix(list(), ngroup, 1);
-  zo3Converter=matrix(list(), ngroup, 1);#Zo3Converter[[i]] gives zo i-th element index in zo3
-  zo3index=1:nsMax;#index columns of zo3
-  for (i in 1:ngroup)
+  #Creating rules_no_ommit variable
+  rules_no_ommit=matrix(list(), n_groups, 1);
+  rules_converter=matrix(list(), n_groups, 1);#rules_converter[[i]] gives rules_no_ommit i-th element index in rules
+  rules_index=1:n_selection_equations;#index columns of rules
+  for (i in 1:n_groups)
   {
-    zo[[i]]=matrix(zo3[i,zo3[i,]!=0],nrow=1);#removing 0 from zo
-    zo3Converter[[i]]=zo3index[which(zo3[i,] != 0)];
+    rules_no_ommit[[i]]=matrix(rules[i,rules[i,]!=0],nrow=1);#removing 0 from rules_no_ommit
+    rules_converter[[i]]=rules_index[which(rules[i,] != 0)];#determining converter mapping
   }
-  ns=as.matrix(rep(0,ngroup));#number of selection equations for group i
-  for (i in 1:ngroup)
+  n_selection_equations=as.matrix(rep(0,n_groups));#number of selection equations for groups i
+  for (i in 1:n_groups)
   {
-    ns[i]=NCOL(zo[[i]]);#equals to the number of presisting equations
+    n_selection_equations[i]=NCOL(rules_no_ommit[[i]]);#equals to the number of presisting equations
   }
   #PHASE 2: Indexing data
-  #Defining nSigma
-  nSigma<-sum(1:(nsMax-1))*(nsMax>1)+noutcome*(nsMax+1);#index of the last sigma in parameter vector
-  #indexing rho in parameter vector
-  startCoef<-sum(1:(nsMax-1))*(nsMax>1)+1;
-  nrhoY=matrix(list(), noutcome, 1);
-  for (i in 1:noutcome)
+  #Defining sigma_last_index
+  sigma_last_index<-sum(1:(n_selection_equations-1))*(n_selection_equations>1)+
+    n_outcome*(n_selection_equations+1);#index of the last sigma in parameter vector
+  #Indexing rho in parameter vector
+  start_coef<-sum(1:(n_selection_equations-1))*(n_selection_equations>1)+1;
+   rho_y_indices=matrix(list(), n_outcome, 1);
+  for (i in 1:n_outcome)
   {
-    endCoef=startCoef+nsMax-1;
-    nrhoY[[i]]=startCoef:endCoef;
-    startCoef=endCoef+1;
+    end_coef=start_coef+n_selection_equations-1;
+     rho_y_indices[[i]]=start_coef:end_coef;
+    start_coef=end_coef+1;
   }
-  #Names for different yh predictors
-  yhstr=matrix(list(), noutcome, 1);
-  for (i in 1:noutcome)#for each outcome type
+  #Names for different y_variables regressors
+  y_variables_names=matrix(list(), n_outcome, 1);
+  for (i in 1:n_outcome) #for each outcome type
   {
-    yhstr[[i]]=paste('yh',toString(i));
-    #MAYBE SHORTEN SOMEHOW
-    h$new=yh[[i]];
-    colnames(h)[ncol(h)]=yhstr[[i]];
+    y_variables_names[[i]]=paste('y_variables',toString(i));
+    y_and_z$new=y_variables[[i]];
+    colnames(y_and_z)[ncol(y_and_z)]=y_variables_names[[i]];
   }
-  #names for different zh predictors
-  zhstr=matrix(list(), nsMax, 1);
-  for (i in 1:nsMax)#for each selection eqation
+  #Names for different z_variables regressors
+  z_variables_names=matrix(list(), n_selection_equations, 1);
+  for (i in 1:n_selection_equations) #for each selection eqation
   {
-    zhstr[[i]]=paste('zh',toString(i));
-    h$new=zh[[i]];
-    colnames(h)[ncol(h)]=zhstr[[i]];
+    z_variables_names[[i]]=paste('z_variables',toString(i));
+    y_and_z$new=z_variables[[i]];
+    colnames(y_and_z)[ncol(y_and_z)]=z_variables_names[[i]];
   }
-  nzh=as.matrix(rep(0,nsMax));#number of variables in zh[[i]]
-  for (i in (1:nsMax))
+  n_z_variables=as.matrix(rep(0,n_selection_equations));#number of variables in z_variables[[i]]
+  for (i in (1:n_selection_equations))
   {
-    nzh[i]=NCOL(zh[[i]]);
+    n_z_variables[i]=NCOL(z_variables[[i]]);
   }
-  #PHASE 3: Grouping variables
-  #Clearing in order to split among groups
-  yh=matrix(list(), ngroup, 1)
-  zh=matrix(list(), ngroup, nsMax)
-  z=matrix(list(), ngroup, 1)
-  y=matrix(list(), ngroup, 1)
-  #Sorting according to zo3
-  h$sortRank=rep(0,n);#Creating variable ranking
-  for (i in 1:ngroup)
+  #PHASE 3: grouping variables
+  #Clearing in order to split among groupss
+  y_variables=matrix(list(), n_groups, 1)
+  z_variables=matrix(list(), n_groups, n_selection_equations)
+  z=matrix(list(), n_groups, 1)
+  y=matrix(list(), n_groups, 1)
+  #Sorting according to rules
+  y_and_z$sort_rank=rep(0,n_observations_total);#creating variables ranking
+  for (i in 1:n_groups)
   {
-    #Takes only each nsMax element of ismember because of duplicates
-    #h$sortRank[apply(h1[,2:(nsMax+1)],1,function(x) all(x==zo3Full[i,]))]=i;
-    h$sortRank[apply(h1,1,function(x) all(x==zo3Full[i,]))]=i;
+    #Takes only each n_selection_equations element of ismember because of duplicates
+    #y_and_z$sort_rank[apply(y_and_z_rules[,2:(n_selection_equations+1)],1,function(x) all(x==rules_with_y[i,]))]=i;
+    y_and_z$sort_rank[apply(y_and_z_rules,1,function(x) all(x==rules_with_y[i,]))]=i;
   }
-  h1<-NULL#free memmory
+  y_and_z_rules<-NULL#free memmory
   #Sorting according to ranking variable
-  h=h[with(h, order(sortRank)),];
-  #Division of z and yh according to groups
-  nyh=rep(0,noutcome);#number of variables in yh[[i]]
-  for (i in 1:ngroup)
+  y_and_z=y_and_z[with(y_and_z, order(sort_rank)),];
+  #Division of z and y_variables according to groups
+  n_y_variables=rep(0,n_outcome);#number of variables in y_variables[[i]]
+    #division of y_variables
+  for (i in 1:n_groups)
   {
-    y[[i]]=as.matrix(h$y[h$sortRank==i]);
-    if (group[i]!=0)
+    y[[i]]=as.matrix(y_and_z$y[y_and_z$sort_rank==i]);
+    if (groups[i]!=0)
     {
-      yh[[i]]=h[yhstr[[group[i]]]][h$sortRank==i,];
-      if(removeZeroColumns) {yh[[i]]=yh[[i]][,which(colSums(abs(yh[[i]]), na.rm = TRUE)>0)]}
-      nyh[group[i]]=NCOL(yh[[i]])
+      y_variables[[i]]=y_and_z[y_variables_names[[groups[i]]]][y_and_z$sort_rank==i,];
+      if(remove_zero_columns) 
+        {
+          y_variables[[i]]=y_variables[[i]][,which(colSums(abs(y_variables[[i]]), na.rm = TRUE)>0)]
+        }
+      n_y_variables[groups[i]]=NCOL(y_variables[[i]])
     }
-    counterz=0;
-    if (nsMax>1)
+      #division of z_variables
+    counter_z=0;
+    if (n_selection_equations>1)
     {
-      zPseudo=h[,2:(nsMax+1)][h$sortRank==i,];
-      z[[i]]=matrix(ncol=ns[i],nrow=dim(zPseudo)[1]);#Preinitialization
+      z_pseudo=y_and_z[,2:(n_selection_equations+1)][y_and_z$sort_rank==i,];
+      z[[i]]=matrix(ncol=n_selection_equations[i],nrow=dim(z_pseudo)[1]);#preinitialization
     }
-
     else
     {
-      zPseudo=matrix(h[,2:(nsMax+1)][h$sortRank==i],ncol=1);
-      z[[i]]=matrix(ncol=ns[i],nrow=length(zPseudo));#Preinitialization
+      z_pseudo=matrix(y_and_z[,2:(n_selection_equations+1)][y_and_z$sort_rank==i],ncol=1);
+      z[[i]]=matrix(ncol=n_selection_equations[i],nrow=length(z_pseudo));#preinitialization
     }
-    for (j in 1:nsMax)
+    for (j in 1:n_selection_equations)
     {
-      if (zo3[i,j]!=0)
+      if (rules[i,j]!=0)
       {
-        counterz=counterz+1;
-        z[[i]][,counterz]<-zPseudo[,j];
-        zh[[i,j]]=as.matrix(h[zhstr[[j]]][h$sortRank==i,]);#as matrix because else treated as list
+        counter_z=counter_z+1;
+        z[[i]][,counter_z]<-z_pseudo[,j];
+        z_variables[[i,j]]=as.matrix(y_and_z[z_variables_names[[j]]][y_and_z$sort_rank==i,]);#as matrix because else treated as list
       }
     }
   }
   #Assigning parameter vector indexes
-  #coefficients for y predictors depend on outcome
-  coef=matrix(list(), noutcome, 1);#set nyh+1 if constant include automatically
-  startCoef=nSigma+1;
-  for (i in (1:noutcome))
+    #coefficients for y predictors depend on outcome
+  coef_y=matrix(list(), n_outcome, 1);#set n_y_variables+1 if constant include automatically
+  start_coef=sigma_last_index+1;
+  for (i in (1:n_outcome))
   {
-    endCoef=startCoef+nyh[i]-1;
-    coef[[i]]=as.matrix(startCoef:endCoef);
-    startCoef=endCoef+1;
+    end_coef=start_coef+n_y_variables[i]-1;
+    coef_y[[i]]=as.matrix(start_coef:end_coef);
+    start_coef=end_coef+1;
   }
-  #coefficients for z predictors
-  ndz=matrix(list(), nsMax, 1);#+1 greater then amount of parameters
-  ndz[[1]]=as.matrix((endCoef+1):(endCoef+nzh[1]));
-  if (nsMax>1)
+    #coefficients for z predictors
+  coef_z=matrix(list(), n_selection_equations, 1);#+1 greater then amount of parameters
+  coef_z[[1]]=as.matrix((end_coef+1):(end_coef+n_z_variables[1]));
+  if (n_selection_equations>1)
   {
-  for (i in 2:nsMax)
+  for (i in 2:n_selection_equations)
   {
-    endValue=dim(ndz[[i-1]])[1];
-    print(nzh[i])
-    print(nzh)
-    ndz[[i]]=as.matrix((ndz[[i-1]][endValue]+1):(ndz[[i-1]][endValue]+nzh[i]));
+    end_value=dim(coef_z[[i-1]])[1];
+    coef_z[[i]]=as.matrix((coef_z[[i-1]][end_value]+1):(coef_z[[i-1]][end_value]+n_z_variables[i]));
   }
   }
   #Calculating groups sizes
-  groupsize=rep(0,ngroup);
-  for (i in 1:ngroup)
+  groups_observations=rep(0,n_groups);
+  for (i in 1:n_groups)
   {
-    groupsize[i]=NROW(y[[i]]);
+    groups_observations[i]=NROW(y[[i]]);
   }
-  return(list('y'=y, 'yh'=yh, 'z'=z, 'zh'=zh, 'group'=group, 'zo3'=zo3, 'ngroup'=ngroup, 'noutcome'=noutcome,
-              'zo3Converter'=zo3Converter, 'zo'=zo, 'ns'=ns, 'nSigma'=nSigma, 'nsMax'=nsMax, 'coef'=coef,
-              'ndz'=ndz, 'groupsize'=groupsize, 'nyh'=nyh, 'nzh'=nzh, 'nrhoY'=nrhoY))
+  return(list('y'=y, 'y_variables'=y_variables, 'z'=z, 'z_variables'=z_variables, 'groups'=groups, 'rules'=rules, 'n_groups'=n_groups, 'n_outcome'=n_outcome,
+              'rules_converter'=rules_converter, 'rules_no_ommit'=rules_no_ommit, 'n_selection_equations'=n_selection_equations, 'sigma_last_index'=sigma_last_index, 'n_selection_equations'=n_selection_equations, 'coef_y'=coef_y,
+              'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, ' rho_y_indices'= rho_y_indices))
 }
