@@ -78,6 +78,10 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   nyh=sortList$n_y_variables;
   nzh=sortList$n_z_variables;
   rho_y_indices=sortList$rho_y_indices;
+  print(rho_y_indices)
+  print(rho_y_indices[[1]])
+  print(123)
+  break
   rho_z_n=sum(1:(n_selection_equations_max-1));
   rhoSigma=matrix(list(),n_outcome);
   opts = opts;#setting optimization options max(maxeval/15,n_selection_equations_max*50)
