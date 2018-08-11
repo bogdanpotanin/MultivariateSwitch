@@ -221,7 +221,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     twostep[[i]]=model;
     nCoef[i]=length(x0[coef_y[[i]]])
     x0[coef_y[[i]]]=coef(model)[1:nCoef[i]];#coefficients
-    coefLambda=coef_y(model)[(nCoef[i]+1):length(coef_y(model))];#coefficients
+    coefLambda=coef(model)[(nCoef[i]+1):length(coef(model))];#coefficients
     coefLambda[is.na(coefLambda)]=0;
     parameters[coef_y[[i]]]=variable.names(model)[1:nCoef[i]];#Store coefficients names
     Ggamma[[i]]=matrix(0,length(y1[[i]]),sum(nzh));
@@ -266,7 +266,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     Ggamma[[i]]=Ggamma[[i]]/x0[sigma_last_index-n_outcome+i];#adjust for beta instead or rho
     yVariance[[i]]=x0[sigma_last_index-n_outcome+i]^2-yVariance[[i]]
     #Dealing with rho
-    rhoSigma[[i]]=coef_y(model)[(nCoef[i]+1):(nCoef[i]+n_selection_equations_max)];
+    rhoSigma[[i]]=coef(model)[(nCoef[i]+1):(nCoef[i]+n_selection_equations_max)];
     rhoSigma[[i]][is.na(rhoSigma[[i]])]=0;
     sigma[i]=x0[sigma_last_index-n_outcome+i];
     rhoY[[i]]=rhoSigma[[i]]/sigma[i];
