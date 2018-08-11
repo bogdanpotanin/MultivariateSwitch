@@ -1,86 +1,86 @@
-gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngroup, nsMax, zo3Converter, noutcome, zo3, groupsize, nrhoY, ShowInfo=FALSE, maximization=FALSE)
+gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_selection_equations, coef_z, sigma_last_index, coef_y, groups, n_groups, n_selection_equations_max, rules_converter, n_outcome, rules, groups_observations, rho_y_indices, show_info=FALSE, maximization=FALSE)
 {
   maxNumber=Inf#sqrt(.Machine$double.xma);
   #PHASE 1: Preparing data
   #Coefficients variables initialization
   f=0;
-  beta=matrix(list(), noutcome, 1);#coefficients for y
-  for (i in 1:noutcome)
+  beta=matrix(list(), n_outcome, 1);#coefficients for y
+  for (i in 1:n_outcome)
   {
-    beta[[i]]=as.matrix(x[coef[[i]]]);#where beta[[i]] is a column of i-th group coefficients
-    #colnames(beta[[i]])=colnames(yh[[i]])
+    beta[[i]]=as.matrix(x[coef_y[[i]]]);#where beta[[i]] is a column of i-th groups coefficients
+    #colnames(beta[[i]])=colnames(y_variables[[i]])
   }
-  alpha=matrix(list(), nsMax, 1)#coefficients for each z[i]
-  for (i in 1:nsMax )
+  alpha=matrix(list(), n_selection_equations_max, 1)#coefficients for each z[i]
+  for (i in 1:n_selection_equations_max )
   {
-    alpha[[i]]=t(x[ndz[[i]]]);#where alpha(:,i) is column of zi coefficients
-    #colnames(alpha[[i]])=colnames(zh[[i]])
+    alpha[[i]]=t(x[coef_z[[i]]]);#where alpha(:,i) is column of zi coefficients
+    #colnames(alpha[[i]])=colnames(z_variables[[i]])
   }
   #Covariation matrix
   #distinguishing different types of elements
-  rhoZ=x[1:sum(1:(nsMax-1))];#correlations between different z disturbances with each other
-  rhoY=matrix(list(), nrow=noutcome, ncol=1);#correlations between different z disturbances and y disturbance
-  sigma=matrix(nrow=noutcome,ncol=1);#disturbances for different outcomes
-  for (i in 1:noutcome)
+  rhoZ=x[1:sum(1:(n_selection_equations_max-1))];#correlations between different z disturbances with each other
+  rhoY=matrix(list(), nrow=n_outcome, ncol=1);#correlations between different z disturbances and y disturbance
+  sigma=matrix(nrow=n_outcome,ncol=1);#disturbances for different outcomes
+  for (i in 1:n_outcome)
   {
-    rhoY[[i]]=as.matrix(x[nrhoY[[i]]]);#correlations between z and y
-    sigma[i]=x[nSigma-noutcome+i];#sigma represents variance of y disturbances
+    rhoY[[i]]=as.matrix(x[rho_y_indices[[i]]]);#correlations between z and y
+    sigma[i]=x[sigma_last_index-n_outcome+i];#sigma represents variance of y disturbances
   }
   #if (sigma==0) {return(Inf);}#For GenSa algorithm
   #Matrix of z
-  Sigma0=triangular(rhoZ,rep(1,nsMax));#triangular(right corner elements, diagonal emelents)
-  Sigma0=rbind(cbind(Sigma0,rep(0,nsMax)),rep(0,nsMax+1));
-  if (nsMax==1) {Sigma0=matrix(c(1,0,0,0),ncol=2);}
-  Sigma=matrix(list(), noutcome, 1);
+  Sigma0=triangular(rhoZ,rep(1,n_selection_equations_max));#triangular(right corner elements, diagonal emelents)
+  Sigma0=rbind(cbind(Sigma0,rep(0,n_selection_equations_max)),rep(0,n_selection_equations_max+1));
+  if (n_selection_equations_max==1) {Sigma0=matrix(c(1,0,0,0),ncol=2);}
+  Sigma=matrix(list(), n_outcome, 1);
   #Adding y disturbances to the matrix
-  if (max(group!=0))
+  if (max(groups!=0))
   {
-    for (i in 1:noutcome)
+    for (i in 1:n_outcome)
     {
       Sigma[[i]]=Sigma0;
-      Sigma[[i]][1:(nsMax+1),nsMax+1]=t(c(rhoY[[i]],sigma[i]))*sigma[i];#sigma])*sigma in order to include sigma^2 in matrix
-      Sigma[[i]][nsMax+1,1:nsMax]=rhoY[[i]]*sigma[i];
+      Sigma[[i]][1:(n_selection_equations_max+1),n_selection_equations_max+1]=t(c(rhoY[[i]],sigma[i]))*sigma[i];#sigma])*sigma in order to include sigma^2 in matrix
+      Sigma[[i]][n_selection_equations_max+1,1:n_selection_equations_max]=rhoY[[i]]*sigma[i];
     }
   }
-  #else {Sigma0=Sigma0[1:nsMax,1:nsMax]}#for GenSa algorithm
+  #else {Sigma0=Sigma0[1:n_selection_equations_max,1:n_selection_equations_max]}#for GenSa algorithm
   #Assigning vectors for gradient
   g=x*0; #final gradient vector
   rhoZGradient=rhoZ*0;
-  rhoYGradient=matrix(list(), noutcome, 1);
-  for (i in 1:noutcome)
+  rhoYGradient=matrix(list(), n_outcome, 1);
+  for (i in 1:n_outcome)
   {
-    rhoYGradient[[i]]=matrix(0,nrow=nsMax,ncol=1);
+    rhoYGradient[[i]]=matrix(0,nrow=n_selection_equations_max,ncol=1);
   }
-  betaGradient=matrix(list(), noutcome, 1);
-  for (i in 1:noutcome)
+  betaGradient=matrix(list(), n_outcome, 1);
+  for (i in 1:n_outcome)
   {
     betaGradient[[i]]=beta[[i]]*0;
   }
-  alphaGradient=matrix(list(), nsMax, 1);
-  for (i in 1:nsMax)
+  alphaGradient=matrix(list(), n_selection_equations_max, 1);
+  for (i in 1:n_selection_equations_max)
   {
-    alphaGradient[[i]]=matrix(0,nrow=length(ndz[[i]]),ncol=1);
+    alphaGradient[[i]]=matrix(0,nrow=length(coef_z[[i]]),ncol=1);
   }
-  sigmaGradient=matrix(rep(0,noutcome),ncol=1);
+  sigmaGradient=matrix(rep(0,n_outcome),ncol=1);
   #Disturbances and selection probabilities estimation
   SigmaPositively=0;
   if(!is.null(Sigma[[1]]))
   {
-    for (i in 1:noutcome)
+    for (i in 1:n_outcome)
     {
       SigmaPositively=SigmaPositively+is.positive.definite(as.matrix(Sigma[[i]]), tol=1e-16);
     }
   }
-  else {if (is.positive.semi.definite(Sigma0)){SigmaPositively=noutcome;}}
-  if (SigmaPositively==noutcome) #check wheather Sigma is positively defined
+  else {if (is.positive.semi.definite(Sigma0)){SigmaPositively=n_outcome;}}
+  if (SigmaPositively==n_outcome) #check wheather Sigma is positively defined
   {
-    epsilon=matrix(list(), noutcome, 1);#disturbances of y
+    epsilon=matrix(list(), n_outcome, 1);#disturbances of y
     #y disturbances estimation
-    for (i in 1:(ngroup))
+    for (i in 1:(n_groups))
     {
-      if (group[i]!=0)
+      if (groups[i]!=0)
       {
-        epsilon[[i]]=y[[i]]-as.matrix(yh[[i]])%*%beta[[group[i]]];
+        epsilon[[i]]=y[[i]]-as.matrix(y_variables[[i]])%*%beta[[groups[i]]];
       }
     }
   }
@@ -91,50 +91,50 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
     else {return(list(objective=-maxNumber, gradient=rep(-maxNumber,length(x))));}
   }
   #z selection probabilities
-  z=matrix(list(), noutcome, 1);
-  for (i in 1:ngroup)
+  z=matrix(list(), n_outcome, 1);
+  for (i in 1:n_groups)
   {
-    z[[i]]=matrix(0,ncol=ns[i],nrow=groupsize[i])
-    for (j in 1:ns[i])
+    z[[i]]=matrix(0,ncol=n_selection_equations[i],nrow=groups_observations[i])
+    for (j in 1:n_selection_equations[i])
     {
-        z[[i]][,j]=zh[[i,zo3Converter[[i]][j]]]%*%t(alpha[[zo3Converter[[i]][j]]]);
+        z[[i]][,j]=z_variables[[i,rules_converter[[i]][j]]]%*%t(alpha[[rules_converter[[i]][j]]]);
     }
   }
   #PHASE 2: Likelihood estimation
   #Variables to store observations likelihoods
-  observed1=matrix(list(), ngroup, 1);#probability of z conditional on y disturbances
-  observed2=matrix(list(), ngroup, 1);#unconditional probability of y disturbances
+  observed1=matrix(list(), n_groups, 1);#probability of z conditional on y disturbances
+  observed2=matrix(list(), n_groups, 1);#unconditional probability of y disturbances
   #Conditional covariance matrices and mean
-  SigmaCond=matrix(list(), ngroup, 1);#array of conditional matrices for each group
-  k=matrix(list(), ngroup, 1);#argument of multinominal normal probability function
+  SigmaCond=matrix(list(), n_groups, 1);#array of conditional matrices for each groups
+  k=matrix(list(), n_groups, 1);#argument of multinominal normal probability function
   #print(Sigma[[1]])
-  #Likelihood calculation for each group
-  for (i in (1:(ngroup)))
+  #Likelihood calculation for each groups
+  for (i in (1:(n_groups)))
   {
-    if (group[i]!=0) #if we have observations for y in this group
+    if (groups[i]!=0) #if we have observations for y in this groups
     {
-      #Calculating conditional mean and covariance matrix for i-th group
-      listCond=mvncond(mean=matrix(0,nrow=groupsize[i],ncol=ns[i]+1), sigma=Sigma[[group[i]]][zo3[i,]!=0,zo3[i,]!=0], dependent.ind = 1:ns[i], given.ind = ns[i]+1, X.given=epsilon[[i]]);
+      #Calculating conditional mean and covariance matrix for i-th groups
+      listCond=mvncond(mean=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]+1), sigma=Sigma[[groups[i]]][rules[i,]!=0,rules[i,]!=0], dependent.ind = 1:n_selection_equations[i], given.ind = n_selection_equations[i]+1, X.given=epsilon[[i]]);
       SigmaCond[[i]]=listCond[[1]];
       meanCond=listCond[[2]];
       #meanCond1-meanCond
       #Estimating unconditional probabilities of y disturbances
-      observed2[[i]]=dnorm(epsilon[[i]], mean=0, sd=sigma[group[i]]);
+      observed2[[i]]=dnorm(epsilon[[i]], mean=0, sd=sigma[groups[i]]);
     }
     else #so if we have no observations for y
     {
-      SigmaCond[[i]]=as.matrix(Sigma0[c(zo3[i,]!=0,FALSE),c(zo3[i,]!=0,FALSE)]);#Choose part of Sigma where selection equation presists
+      SigmaCond[[i]]=as.matrix(Sigma0[c(rules[i,]!=0,FALSE),c(rules[i,]!=0,FALSE)]);#Choose part of Sigma where selection equation presists
       meanCond=0;
     }
     #Adjusting signs of covariance matrix
-    for (j in 1:(ns[i]))
+    for (j in 1:(n_selection_equations[i]))
     {
-      SigmaCond[[i]][,j]=SigmaCond[[i]][,j]*zo[[i]][j];
-      SigmaCond[[i]][j,]=SigmaCond[[i]][j,]*zo[[i]][j];
+      SigmaCond[[i]][,j]=SigmaCond[[i]][,j]*rules_no_ommit[[i]][j];
+      SigmaCond[[i]][j,]=SigmaCond[[i]][j,]*rules_no_ommit[[i]][j];
     }
     #Calculating argument for multinominal normal probability
-    k[[i]]<-sweep((z[[i]]+meanCond),MARGIN=2,as.vector(zo[[i]]),'*');
-    if (ns[i]==2)
+    k[[i]]<-sweep((z[[i]]+meanCond),MARGIN=2,as.vector(rules_no_ommit[[i]]),'*');
+    if (n_selection_equations[i]==2)
       {
         rho=SigmaCond[[i]][1,2]/sqrt(SigmaCond[[i]][1,1]*SigmaCond[[i]][2,2]);#correlation for standtadtised distribution
         if (abs(rho)<=0.99) {observed1[[i]]=pbivnorm(x = cbind(k[[i]][,1]/sqrt(SigmaCond[[i]][1,1]), k[[i]][,2]/sqrt(SigmaCond[[i]][2,2])), rho = rho);}
@@ -142,7 +142,7 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
       }
     else {observed1[[i]]=pmnorm(as.matrix(k[[i]]), varcov = SigmaCond[[i]]);}
     #Summarizing the results
-    if (group[i]!=0)
+    if (groups[i]!=0)
     {
       f=f-sum(log(observed1[[i]])+log(observed2[[i]]));
     }
@@ -153,25 +153,25 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
   }
   #if (!grad) {return(f);}#For GenSa
   #PHASE 3: Gradient calculation
-  for (i in 1:ngroup)#%for each group
+  for (i in 1:n_groups)#%for each groups
   {
     rhoZGradientCounter=1;
-    #Assigning variables that change per group
-    SigmaCond2=array(0,dim=c(ns[i]-1,ns[i]-1,ns[i]));#array recalculated for each group
-    k2=array(0,dim=c(groupsize[i],ns[i]-1,ns[i]));#(observation, conditioned arguments)
-    SigmaConds12s22=matrix(0,nrow=ns[i]-1,ncol=ns[i]);#parts by which mean multiplied under condition
-    dFdk=matrix(0,nrow=groupsize[i],ncol=ns[i])
-    FkCondition2=matrix(0,nrow=groupsize[i],ncol=ns[i]);
-    fkCondition2=matrix(0,nrow=groupsize[i],ncol=ns[i]);
-    for (j in 1:ns[i])#for each argument of mvncdf
+    #Assigning variables that change per groups
+    SigmaCond2=array(0,dim=c(n_selection_equations[i]-1,n_selection_equations[i]-1,n_selection_equations[i]));#array recalculated for each groups
+    k2=array(0,dim=c(groups_observations[i],n_selection_equations[i]-1,n_selection_equations[i]));#(observation, conditioned arguments)
+    SigmaConds12s22=matrix(0,nrow=n_selection_equations[i]-1,ncol=n_selection_equations[i]);#parts by which mean multiplied under condition
+    dFdk=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i])
+    FkCondition2=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]);
+    fkCondition2=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]);
+    for (j in 1:n_selection_equations[i])#for each argument of mvncdf
     {
       #Lets denote dydx partial derivative of y respect to x
       #Seperate cycle in order to have all parameters while dealing
       #with second derevatives
       #Estimating conditional parameters
-      if (ns[i]>1)#because else dF(x1|x2)/dx2 includes only pdf part
+      if (n_selection_equations[i]>1)#because else dF(x1|x2)/dx2 includes only pdf part
       {
-        listCond=mvncond(mean=matrix(0,nrow=groupsize[i],ncol=ns[i]), sigma=SigmaCond[[i]], dependent.ind=c((1:ns[i])[-j]), given.ind = j, X.given=k[[i]][,j]);
+        listCond=mvncond(mean=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]), sigma=SigmaCond[[i]], dependent.ind=c((1:n_selection_equations[i])[-j]), given.ind = j, X.given=k[[i]][,j]);
         SigmaCond2[,,j]=listCond[[1]];
         meanCond2=listCond[[2]];
         SigmaConds12s22[,j]=listCond[[3]];
@@ -185,30 +185,30 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
       }
       fkCondition2[,j]=dnorm(k[[i]][,j], mean=0, sd=sqrt(SigmaCond[[i]][j,j]));
     }
-      for (j in 1:ns[i])#for each argument of mvncdf
+      for (j in 1:n_selection_equations[i])#for each argument of mvncdf
       {
-        jConverted=zo3Converter[[i]][j];#the number of j in zo3
+        jConverted=rules_converter[[i]][j];#the number of j in rules
         #Partial derivatives estimation
         dFdk[,j]=FkCondition2[,j]*fkCondition2[,j]/observed1[[i]];
-        dkda=zh[[i,jConverted]]*zo[[i]][j];
-        #Adding derivative in this group for alpha gradient
+        dkda=z_variables[[i,jConverted]]*rules_no_ommit[[i]][j];
+        #Adding derivative in this groups for alpha gradient
         alphaGradient[[jConverted]]=alphaGradient[[jConverted]]-t(dkda)%*%dFdk[,j];
         #Calculating second derivatives for rhoZ and rhoY
-      if (j<=(ns[i]-1))
+      if (j<=(n_selection_equations[i]-1))
       {
-          for (l in j:(ns[i]-1))#for each unconditioned argument of mvncdf greater then j
+          for (l in j:(n_selection_equations[i]-1))#for each unconditioned argument of mvncdf greater then j
         {
           #Calculating conditional probabilities
-          j2=l+1;#which of ns arguments is conditioned second
-          j2Converted=zo3Converter[[i]][j2];
-          if (ns[i]>2)#because else dF(x1|x2)/dx2 includes only pdf part
+          j2=l+1;#which of n_selection_equations arguments is conditioned second
+          j2Converted=rules_converter[[i]][j2];
+          if (n_selection_equations[i]>2)#because else dF(x1|x2)/dx2 includes only pdf part
           {
-            listCond=mvncond(mean=matrix(0,nrow=groupsize[i],ncol=ns[i]-1), sigma=SigmaCond2[,,j], dependent.ind=c((1:(ns[i]-1))[-l]), given.ind=l, X.given=k2[,l,j]);
+            listCond=mvncond(mean=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]-1), sigma=SigmaCond2[,,j], dependent.ind=c((1:(n_selection_equations[i]-1))[-l]), given.ind=l, X.given=k2[,l,j]);
             SigmaCond3=listCond[[1]];
             meanCond3=listCond[[2]];
             k3=k2[,-l,j]-meanCond3;#argument with j-th and j2-th elements conditioned
             FkCondition3=pmnorm(x=as.matrix(k3), varcov = SigmaCond3);
-            #FkCondition3=apply(X=k3,MARGIN=1, FUN=function(x) pmvnorm(mean = 0, sigma = SigmaCond3, lower=rep(-Inf,ns[i]-2), upper=x, algorithm = algorithm));
+            #FkCondition3=apply(X=k3,MARGIN=1, FUN=function(x) pmvnorm(mean = 0, sigma = SigmaCond3, lower=rep(-Inf,n_selection_equations[i]-2), upper=x, algorithm = algorithm));
           }
           else
           {
@@ -218,73 +218,73 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
           #Calculating derivative of F respect to j and j2
           dFdk2=t(FkCondition3*fkCondition3/observed1[[i]]);#transpose to simplify furher multiplication
           #Adding this derivative to the rhoZ gradient
-          shareblePart=sum(dFdk2)*zo[[i]][j]*zo[[i]][j2];#part common both for rhoZ and convariance part of rhoY
-          rhoZGradient[zo3Converter[[i]][rhoZGradientCounter]]=rhoZGradient[zo3Converter[[i]][rhoZGradientCounter]]-shareblePart;
+          shareblePart=sum(dFdk2)*rules_no_ommit[[i]][j]*rules_no_ommit[[i]][j2];#part common both for rhoZ and convariance part of rhoY
+          rhoZGradient[rules_converter[[i]][rhoZGradientCounter]]=rhoZGradient[rules_converter[[i]][rhoZGradientCounter]]-shareblePart;
           rhoZGradientCounter=rhoZGradientCounter+1;
           #Adding adjusted derivatives to the rhoY gradient (plus
           #because multiplied by -rhoY and -s12s22)
-          if (group[i]!=0)
+          if (groups[i]!=0)
           {
             #covariance part
-            rhoYGradient[[group[i]]][jConverted]=rhoYGradient[[group[i]]][jConverted]+shareblePart*rhoY[[group[i]]][j2Converted];
-            rhoYGradient[[group[i]]][j2Converted]=rhoYGradient[[group[i]]][j2Converted]+shareblePart*rhoY[[group[i]]][jConverted];
+            rhoYGradient[[groups[i]]][jConverted]=rhoYGradient[[groups[i]]][jConverted]+shareblePart*rhoY[[groups[i]]][j2Converted];
+            rhoYGradient[[groups[i]]][j2Converted]=rhoYGradient[[groups[i]]][j2Converted]+shareblePart*rhoY[[groups[i]]][jConverted];
             #variance second part
-            rhoYGradient[[group[i]]][jConverted]=rhoYGradient[[group[i]]][jConverted]-sum(dFdk2*SigmaConds12s22[l,j])*(rhoY[[group[i]]][jConverted]);#do not multiplied by 2 because devided by 2 due to sigma derivative formula
-            rhoYGradient[[group[i]]][j2Converted]=rhoYGradient[[group[i]]][j2Converted]-sum(dFdk2*SigmaConds12s22[j,j2])*(rhoY[[group[i]]][j2Converted]);
+            rhoYGradient[[groups[i]]][jConverted]=rhoYGradient[[groups[i]]][jConverted]-sum(dFdk2*SigmaConds12s22[l,j])*(rhoY[[groups[i]]][jConverted]);#do not multiplied by 2 because devided by 2 due to sigma derivative formula
+            rhoYGradient[[groups[i]]][j2Converted]=rhoYGradient[[groups[i]]][j2Converted]-sum(dFdk2*SigmaConds12s22[j,j2])*(rhoY[[groups[i]]][j2Converted]);
           }
         }
       }
-        if (group[i]!=0)
+        if (groups[i]!=0)
         {
           #Gradient for beta: mvncdf part
-          dkdb=-yh[[i]]*rhoY[[group[i]]][jConverted]*zo[[i]][j]/sigma[group[i],1];
+          dkdb=-y_variables[[i]]*rhoY[[groups[i]]][jConverted]*rules_no_ommit[[i]][j]/sigma[groups[i],1];
           dFdb=t(dkdb)%*%dFdk[,j];
-          betaGradient[[group[i]]]=betaGradient[[group[i]]]-dFdb;
+          betaGradient[[groups[i]]]=betaGradient[[groups[i]]]-dFdb;
           #Gradient for rhoY variance first part
           dfdkj=-fkCondition2[,j]*k[[i]][,j]/SigmaCond[[i]][j,j];
-          rhoYGradient[[group[i]]][j]=rhoYGradient[[group[i]]][j]+sum(FkCondition2[,j]*dfdkj/observed1[[i]])*(rhoY[[group[i]]][jConverted]);
+          rhoYGradient[[groups[i]]][j]=rhoYGradient[[groups[i]]][j]+sum(FkCondition2[,j]*dfdkj/observed1[[i]])*(rhoY[[groups[i]]][jConverted]);
           #Gradient for rhoY mvncdf argument part
-          dFdrhoYj=t(dFdk[,j])%*%epsilon[[i]]*(zo[[i]][j]/sigma[group[i],1]);
-          rhoYGradient[[group[i]]][j]=rhoYGradient[[group[i]]][j]-sum(dFdrhoYj);
+          dFdrhoYj=t(dFdk[,j])%*%epsilon[[i]]*(rules_no_ommit[[i]][j]/sigma[groups[i],1]);
+          rhoYGradient[[groups[i]]][j]=rhoYGradient[[groups[i]]][j]-sum(dFdrhoYj);
           #Gradient for sigma mvncdf argument part
-          sigmaGradient[group[i],1]=sigmaGradient[group[i],1]+(dFdrhoYj*rhoY[[group[i]]][j])/sigma[group[i],1];
+          sigmaGradient[groups[i],1]=sigmaGradient[groups[i],1]+(dFdrhoYj*rhoY[[groups[i]]][j])/sigma[groups[i],1];
         }
       }
       #Gradient for beta: mvnpdf part
-      if (group[i]!=0)
+      if (groups[i]!=0)
       {
-        dfdb=t(yh[[i]])%*%epsilon[[i]]/(sigma[group[i],1]^2);
-        betaGradient[[group[i]]]=betaGradient[[group[i]]]-dfdb;
+        dfdb=t(y_variables[[i]])%*%epsilon[[i]]/(sigma[groups[i],1]^2);
+        betaGradient[[groups[i]]]=betaGradient[[groups[i]]]-dfdb;
         #Gradient for sigma mvnpdf part
-        sigmaGradient[group[i],1]=sigmaGradient[group[i],1]-sum((epsilon[[i]]^2-sigma[group[i],1]^2)/(sigma[group[i],1]^3));
+        sigmaGradient[groups[i],1]=sigmaGradient[groups[i],1]-sum((epsilon[[i]]^2-sigma[groups[i],1]^2)/(sigma[groups[i],1]^3));
       }
   }
     #Gradient vector construction
     g=rhoZGradient;
-    for (i in 1:noutcome)
+    for (i in 1:n_outcome)
     {
       g=c(g,rhoYGradient[[i]]);
     }
-    for (i in 1:noutcome)
+    for (i in 1:n_outcome)
     {
       g=c(g,t(sigmaGradient[i]));
     }
-    for (i in 1:noutcome)
+    for (i in 1:n_outcome)
     {
       g=c(g,t(betaGradient[[i]]));
     }
-    for (i in 1:nsMax)
+    for (i in 1:n_selection_equations_max)
     {
       g=c(g,t(alphaGradient[[i]]));
     }
     #Show info
-    if(ShowInfo)
+    if(show_info)
     {
       print('Likelihood')
       print(f)
-      if (max(group!=0))
+      if (max(groups!=0))
       {
-      for (i in 1:noutcome)
+      for (i in 1:n_outcome)
       {
       print(cat('Covariance matrix ',toString(i)))
       print(Sigma[[i]])
@@ -294,27 +294,27 @@ gheckmanLikelihood<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngr
       {
         print(Sigma0)
       }
-      if (max(group!=0))
+      if (max(groups!=0))
       {
-      for (i in 1:max(group))
+      for (i in 1:max(groups))
       {
       print(cat('y',toString(i)))
       print(t(beta[[i]]))
       }
       }
-      for (i in 1:nsMax)
+      for (i in 1:n_selection_equations_max)
       {
       print(cat('z',toString(i)))
       print((alpha[[i]]))
       }
     }
-    if (nsMax==1) {g=g[-1];}
+    if (n_selection_equations_max==1) {g=g[-1];}
     if(is.infinite(f)) {f=maxNumber/10;}
     g[is.infinite(g) | is.na(g)]=maxNumber/10;
     if (!maximization) {return(list(objective=f, gradient=t(g)));}
     else {return(list(objective=-f, gradient=-t(g)));}
 }
-gheckmanGradient<-function(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngroup, nsMax, zo3Converter, noutcome, zo3, groupsize, nrhoY, ShowInfo=FALSE, maximization=FALSE)
+gheckmanGradient<-function(x, y, z_variables, y_variables, rules_no_ommit, n_selection_equations, coef_z, sigma_last_index, coef_y, groups, n_groups, n_selection_equations_max, rules_converter, n_outcome, rules, groups_observations, rho_y_indices, show_info=FALSE, maximization=FALSE)
 {
-  return(gheckmanLikelihood(x, y, zh, yh, zo, ns, ndz, nSigma, coef, group, ngroup, nsMax, zo3Converter, noutcome, zo3, groupsize, nrhoY, ShowInfo=FALSE, maximization=FALSE)[[2]])
+  return(gheckmanLikelihood(x, y, z_variables, y_variables, rules_no_ommit, n_selection_equations, coef_z, sigma_last_index, coef_y, groups, n_groups, n_selection_equations_max, rules_converter, n_outcome, rules, groups_observations, rho_y_indices, show_info=FALSE, maximization=FALSE)[[2]])
 }

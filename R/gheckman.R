@@ -8,7 +8,7 @@
 #' @param selection5 the fifth selecton equation formula
 #' @param groups vector which determines each groups outcome
 #' @param rules matrix which rows correspond to possible combination of selection equations values.
-#' @param ShowInfo shows likelihood function optimization info
+#' @param show_info shows likelihood function optimization info
 #' @param only_twostep if true then only two-step procedure used
 #' @param opts options that are passed to nlopt
 #' @param x0 optional initial values to be used while solving optimization task
@@ -26,7 +26,7 @@
 #' possible combinations. Special 0 value for groups responsible for sample selection.
 gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL,
                    selection4=NULL, selection5=NULL, groups=NULL, rules=NULL,
-                   ShowInfo=FALSE, only_twostep=FALSE,
+                   show_info=FALSE, only_twostep=FALSE,
                    opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-16, "print_level" = 1, maxeval = 1000000),
                    x1=NULL, remove_zero_columns=FALSE)
 {
@@ -74,7 +74,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   n_selection_equations_max=sortList$n_selection_equations_max;
   coef_y=sortList$coef_y;
   coef_z=sortList$coef_z;
-  groupsize=sortList$groups_observations;
+  groups_observations=sortList$groups_observations;
   nyh=sortList$n_y_variables;
   nzh=sortList$n_z_variables;
   rho_y_indices=sortList$rho_y_indices;
@@ -102,11 +102,11 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   lb=c(rep(-0.9999999,rho_z_n),rep(0,numberOfParametersY-rho_z_n),rep(-Inf,numberOfParameters-coef_z[[1]][1]+1));
   ub=c(rep(0.9999999,rho_z_n),rep(0,numberOfParametersY-rho_z_n),rep(Inf,numberOfParameters-coef_z[[1]][1]+1));
   #Estimate coefficients and store them to x0
-  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groupsize=groupsize, rho_y_indices=rho_y_indices, ShowInfo=ShowInfo, maximization=FALSE);
+  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, rho_y_indices=rho_y_indices, show_info=show_info, maximization=FALSE);
   x0=f$solution;
   #x0=f$par;
   #Storing covariance matrix
-  covmatrix=jacobian(func = gheckmanGradient, x = x0, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groupsize=groupsize, rho_y_indices=rho_y_indices, ShowInfo=FALSE);
+  covmatrix=jacobian(func = gheckmanGradient, x = x0, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, rho_y_indices=rho_y_indices, show_info=FALSE);
   covmatrixGamma=solve(covmatrix[coef_z[[1]][1]:length(x0),coef_z[[1]][1]:length(x0)]);
   #Calculating lambda
   zTilde=matrix(list(), n_groups, 1);
@@ -233,7 +233,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     for (t in (1:n_groups)[groups==i])#For each groups corresponding to this outcome
     {
       startCoef=1;
-      endCoef1=startCoef1+groupsize[t]-1#get rows of this groups
+      endCoef1=startCoef1+groups_observations[t]-1#get rows of this groups
       counterz=0;
       for (k in 1:n_selection_equations_max)#for each selection equation
       {
@@ -306,8 +306,8 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   x0_twostep=x0
   #Estimate coefficients and store them to MLE
   if (!is.null(x1)) {x0<-x1;};#substitute some initial value
-  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groupsize=groupsize, rho_y_indices=rho_y_indices, ShowInfo=ShowInfo, maximization=FALSE);
-  stdev=jacobian(func = gheckmanGradient, x = f$solution, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groupsize=groupsize, rho_y_indices=rho_y_indices, ShowInfo=FALSE);
+  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, rho_y_indices=rho_y_indices, show_info=show_info, maximization=FALSE);
+  stdev=jacobian(func = gheckmanGradient, x = f$solution, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, rho_y_indices=rho_y_indices, show_info=FALSE);
   CovM=solve(stdev)
   stdev=sqrt(diag(CovM));
   solution=f$solution;
