@@ -7,8 +7,8 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   z[is.na(z)]=0;#ommited values conversion to 0 code
   y_and_z=data.frame(y,z);#all dependend variables data frame
     #decoding y into observed and not
-  y_and_z_rules=y_and_z; 
-  y_and_z_rules$y[!is.na(y_and_z_rules$y)]=1; 
+  y_and_z_rules=y_and_z;
+  y_and_z_rules$y[!is.na(y_and_z_rules$y)]=1;
   y_and_z_rules$y[is.na(y_and_z_rules$y)]=0;
   #If user has not predefined selection mechanism
   if (is.null(groups) || is.null(rules))
@@ -36,7 +36,7 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     {
       y_variables=matrix(list(y_variables))
     }
-  else 
+  else
   {
     y_variables_copy=y_variables;
     y_variables=matrix(list(),1,n_outcome);
@@ -89,6 +89,7 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     y_and_z$new=z_variables[[i]];
     colnames(y_and_z)[ncol(y_and_z)]=z_variables_names[[i]];
   }
+  print(n_selection_equations)
   n_z_variables=as.matrix(rep(0,n_selection_equations));#number of variables in z_variables[[i]]
   for (i in (1:n_selection_equations))
   {
@@ -120,7 +121,7 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     if (groups[i]!=0)
     {
       y_variables[[i]]=y_and_z[y_variables_names[[groups[i]]]][y_and_z$sort_rank==i,];
-      if(remove_zero_columns) 
+      if(remove_zero_columns)
         {
           y_variables[[i]]=y_variables[[i]][,which(colSums(abs(y_variables[[i]]), na.rm = TRUE)>0)]
         }
