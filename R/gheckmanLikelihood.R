@@ -39,6 +39,7 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
     {
       Sigma[[i]]=Sigma0;
       Sigma[[i]][1:(n_selection_equations_max+1),n_selection_equations_max+1]=t(c(rhoY[[i]],sigma[i]))*sigma[i];#sigma])*sigma in order to include sigma^2 in matrix
+      print(123)
       print(sigma[i])
       print(rhoY[[i]])
       Sigma[[i]][n_selection_equations_max+1,1:n_selection_equations_max]=rhoY[[i]]*sigma[i];
