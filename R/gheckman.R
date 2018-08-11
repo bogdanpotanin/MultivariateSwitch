@@ -75,14 +75,9 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   coef_y=sortList$coef_y;
   coef_z=sortList$coef_z;
   groups_observations=sortList$groups_observations;
-  nyh=sortList$n_y_variables;
-  nzh=sortList$n_z_variables;
+  n_y_variables=sortList$n_y_variables;
+  n_z_variables=sortList$n_z_variables;
   rho_y_indices=sortList$rho_y_indices;
-  print(123)
-  print(rho_y_indices)
-  print(rho_y_indices[[1]])
-  print(123)
-  break
   rho_z_n=sum(1:(n_selection_equations_max-1));
   rhoSigma=matrix(list(),n_outcome);
   opts = opts;#setting optimization options max(maxeval/15,n_selection_equations_max*50)
@@ -229,7 +224,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     coefLambda=coef(model)[(nCoef[i]+1):length(coef(model))];#coefficients
     coefLambda[is.na(coefLambda)]=0;
     parameters[coef_y[[i]]]=variable.names(model)[1:nCoef[i]];#Store coefficients names
-    Ggamma[[i]]=matrix(0,length(y1[[i]]),sum(nzh));
+    Ggamma[[i]]=matrix(0,length(y1[[i]]),sum(n_z_variables));
     #sigma and ? calculation
     startCoef1=1;
     yVariance[[i]]=0;
@@ -243,7 +238,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
       for (k in 1:n_selection_equations_max)#for each selection equation
       {
         l=0#part common for all coefficients of this selection equation
-        endCoef=startCoef+nzh[k]-1;#number of coefficients
+        endCoef=startCoef+n_z_variables[k]-1;#number of coefficients
         if (rules[t,k]!=0)
         {
           counterz=counterz+1;

@@ -20,15 +20,10 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
   #distinguishing different types of elements
   rhoZ=x[1:sum(1:(n_selection_equations_max-1))];#correlations between different z disturbances with each other
   rhoY=matrix(list(), nrow=n_outcome, ncol=1);#correlations between different z disturbances and y disturbance
-  print(rhoY)
-  print(dim(rhoY))
   sigma=matrix(nrow=n_outcome,ncol=1);#disturbances for different outcomes
   for (i in 1:n_outcome)
   {
     rhoY[[i]]=as.matrix(x[rho_y_indices[[i]]]);#correlations between z and y disturbances
-    print(rhoY[[i]])
-    print(rho_y_indices[[i]])
-    print(x[rho_y_indices[[i]]])
     sigma[i]=x[sigma_last_index-n_outcome+i];#sigma represents variance of y disturbances
   }
   #if (sigma==0) {return(Inf);}#For GenSa algorithm
