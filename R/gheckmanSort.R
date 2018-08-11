@@ -67,14 +67,10 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   #Indexing rho in parameter vector
   start_coef<-sum(1:(n_selection_equations_max-1))*(n_selection_equations_max>1)+1;
   rho_y_indices=matrix(list(), n_outcome, 1);
-  print(n_outcome)
   for (i in 1:n_outcome)
   {
     end_coef=start_coef+n_selection_equations_max-1;
-    print(start_coef)
-    print(end_coef)
     rho_y_indices[[i]]=start_coef:end_coef;
-    print(rho_y_indices[[i]])
     start_coef=end_coef+1;
   }
   #Names for different y_variables regressors
@@ -181,5 +177,5 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   }
   return(list('y'=y, 'y_variables'=y_variables, 'z'=z, 'z_variables'=z_variables, 'groups'=groups, 'rules'=rules, 'n_groups'=n_groups, 'n_outcome'=n_outcome,
               'rules_converter'=rules_converter, 'rules_no_ommit'=rules_no_ommit, 'n_selection_equations'=n_selection_equations, 'sigma_last_index'=sigma_last_index, 'n_selection_equations_max'=n_selection_equations_max, 'coef_y'=coef_y,
-              'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, ' rho_y_indices'= rho_y_indices))
+              'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, 'rho_y_indices'= rho_y_indices))
 }
