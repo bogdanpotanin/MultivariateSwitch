@@ -16,8 +16,8 @@
 #' @details This function estimates Multivariate Switch-Selection model via maximum-likelihood and two-step procedures.
 #' This model was developed by E.V. Kossova and B.S. Potanin
 #' Please cite as follows:
-#' "Kossova, Elena & Potanin, Bogdan, 2018. 'Heckman method and switching regression model multivariate
-#' generalization,' Applied Econometrics, Publishing House 'SINERGIA PRESS', vol. 50, pages 114-143."
+#' Kossova, Elena & Potanin, Bogdan, 2018. 'Heckman method and switching regression model multivariate
+#' generalization,' Applied Econometrics, Publishing House 'SINERGIA PRESS', vol. 50, pages 114-143.
 #' Dependent variables in selection equations should have values -1 or 1.
 #' Also there is a special value 0 which indicates that this observation is unobservable but it is necessary
 #' to take into consideration other selection equation information while calculating likelihood function.
@@ -79,37 +79,44 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   n_z_variables=sortList$n_z_variables;
   rho_y_indices=sortList$rho_y_indices;
   rho_z_n=sum(1:(n_selection_equations_max-1));
-  rhoSigma=matrix(list(),n_outcome);
   opts = opts;#setting optimization options max(maxeval/15,n_selection_equations_max*50)
   #PHASE 2: Two-step method
-  numberOfParameters=coef_z[[n_selection_equations_max]][dim(coef_z[[n_selection_equations_max]])[1]]
-  numberOfParametersY=coef_y[[n_outcome]][dim(coef_y[[n_outcome]])[1]]
-  x0=matrix(0,numberOfParameters);
-  parameters=vector(length = length(x0));#Store variables names
-  #get initial values
-  if (n_selection_equations_max==1) {z=matrix(z,ncol=1);}
+  n_parameters=coef_z[[n_selection_equations_max]][dim(coef_z[[n_selection_equations_max]])[1]]
+  n_parameters_y=coef_y[[n_outcome]][dim(coef_y[[n_outcome]])[1]]
+  x0=matrix(0,n_parameters);
+  x0_names=vector(length = length(x0));#Store variables names
+  #Get initial values
+  if (n_selection_equations_max==1) 
+    {
+      z=matrix(z,ncol=1);
+    }
   for (i in 1:n_selection_equations_max)
   {
     #-1 in order to exclude constant
-    x0[coef_z[[i]]]=coef(myGlm<-glm(I((z[z[,i]!=0,i]+1)/2)~.-1,data=data.frame(z_variables[[i]][z[,i]!=0,]),family=binomial(link="probit")));
-    parameters[coef_z[[i]]]=all.vars(formula(myGlm)[-2]);
+    x0[coef_z[[i]]]=coef(probit_simple<-glm(I((z[z[,i]!=0,i]+1)/2)~.-1,
+      data=data.frame(z_variables[[i]][z[,i]!=0,]),family=binomial(link="probit")));
+    x0_names[coef_z[[i]]]=all.vars(formula(probit_simple)[-2]);
   }
-  zhColnames=matrix(list(),n_selection_equations_max);#zhColnames
-  for (i in 1:n_selection_equations_max) {zhColnames[[i]]=colnames(z_variables[[i]]);}
+  z_variables_names=matrix(list(),n_selection_equations_max);#z_variables_names
+  for (i in 1:n_selection_equations_max) {z_variables_names[[i]]=colnames(z_variables[[i]]);}
   z_variables=sortList[[4]];#Only now we can load it from sort method result
   z=sortList[[3]];#Only now we can load it from sort method result
-  #Set lower and upper bound constraints for parameters
-  lb=c(rep(-0.9999999,rho_z_n),rep(0,numberOfParametersY-rho_z_n),rep(-Inf,numberOfParameters-coef_z[[1]][1]+1));
-  ub=c(rep(0.9999999,rho_z_n),rep(0,numberOfParametersY-rho_z_n),rep(Inf,numberOfParameters-coef_z[[1]][1]+1));
+  #Set lower and upper bound constraints for x0_names
+  lb=c(rep(-0.9999999,rho_z_n),rep(0,n_parameters_y-rho_z_n),rep(-Inf,n_parameters-coef_z[[1]][1]+1));
+  ub=c(rep(0.9999999,rho_z_n),rep(0,n_parameters_y-rho_z_n),rep(Inf,n_parameters-coef_z[[1]][1]+1));
   #Estimate coefficients and store them to x0
-  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, rho_y_indices=rho_y_indices, show_info=show_info, maximization=FALSE);
+  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables, 
+            y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, 
+            coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, 
+            n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, 
+            n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, 
+            rho_y_indices=rho_y_indices, show_info=show_info, maximization=FALSE);
   x0=f$solution;
-  #x0=f$par;
   #Storing covariance matrix
   covmatrix=jacobian(func = gheckmanGradient, x = x0, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, rho_y_indices=rho_y_indices, show_info=FALSE);
-  covmatrixGamma=solve(covmatrix[coef_z[[1]][1]:length(x0),coef_z[[1]][1]:length(x0)]);
+  covmatrix_gamma=solve(covmatrix[coef_z[[1]][1]:length(x0),coef_z[[1]][1]:length(x0)]);
   #Calculating lambda
-  zTilde=matrix(list(), n_groups, 1);
+  z_tilde=matrix(list(), n_groups, 1);
   lambda_z=matrix(list(), n_groups, 1);
   lambda=matrix(list(), n_groups, 1);
   lambda2=matrix(list(), n_groups, 1);
@@ -122,7 +129,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   for (i in 1:n_groups)
   {
     Sigma[[i]]=Sigma0[rules[i,]!=0,rules[i,]!=0];
-    zTilde[[i]]=z[[i]]*NA;
+    z_tilde[[i]]=z[[i]]*NA;
     if (groups[i]!=0)
     {
       SigmaCond=as.matrix(Sigma[[i]]);
@@ -131,16 +138,16 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
         SigmaCond[,j]=SigmaCond[,j]*(-rules_no_ommit[[i]][j]);
         SigmaCond[j,]=SigmaCond[j,]*(-rules_no_ommit[[i]][j]);
         zij=z_variables[[i,rules_converter[[i]][j]]]%*%as.matrix(x0[coef_z[[rules_converter[[i]][j]]]]);#%predicted values for zi
-        zTilde[[i]][,j]=zij*z[[i]][,j];#%upper adjusted values
+        z_tilde[[i]][,j]=zij*z[[i]][,j];#%upper adjusted values
       }
-      FzTilde=pmnorm(as.matrix(zTilde[[i]]), varcov = SigmaCond);
-      lambdai=dF(zTilde[[i]],SigmaCond,0, denominator=FALSE)/FzTilde;#general lambda
+      FzTilde=pmnorm(as.matrix(z_tilde[[i]]), varcov = SigmaCond);
+      lambdai=dF(z_tilde[[i]],SigmaCond,0, denominator=FALSE)/FzTilde;#general lambda
       lambdai_z=z[[i]]*lambdai;#lambda sign adjusted
-      lambdai2=d2F(zTilde[[i]],SigmaCond,0)/FzTilde;#great lambda
+      lambdai2=d2F(z_tilde[[i]],SigmaCond,0)/FzTilde;#great lambda
       lambda_z[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda*zi
       lambda[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda
       lambda2[[i]]=array(0,dim=c(length(lambdai[,1]),n_selection_equations_max, n_selection_equations_max));#Big lambda
-      lambda_zTilde[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda1*zTilde
+      lambda_zTilde[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda1*z_tilde
       LAMBDA[[i]]=array(0,dim=c(length(lambdai[,1]),n_selection_equations_max, n_selection_equations_max));#Big lambda
       zG[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);
       zTildeG[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);
@@ -154,9 +161,9 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
           counterz1=0;
           lambda_z[[i]][,j]=lambdai_z[,counterz];
           lambda[[i]][,j]=lambdai[,counterz];
-          lambda_zTilde[[i]][,j]=lambdai[,counterz]*zTilde[[i]][,counterz];
+          lambda_zTilde[[i]][,j]=lambdai[,counterz]*z_tilde[[i]][,counterz];
           zG[[i]][,j]=z[[i]][,counterz];
-          zTildeG[[i]][,j]=zTilde[[i]][,counterz];
+          zTildeG[[i]][,j]=z_tilde[[i]][,counterz];
           #Hessian of lambda
           for (k in 1:n_selection_equations_max)
           {
@@ -209,7 +216,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   X=matrix(list(),n_outcome,1);
   CovB=matrix(list(), n_outcome, 1);
   errors=matrix(list(),n_outcome,1);
-  rhoSigma=matrix(list(),n_outcome,1);
+  rho_multiply_sigma=matrix(list(),n_outcome,1);
   rhoY=matrix(list(),n_outcome,1);
   sigma=matrix(0,n_outcome,1)
   Ggamma=matrix(list(),1,n_outcome);
@@ -223,7 +230,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     x0[coef_y[[i]]]=coef(model)[1:nCoef[i]];#coefficients
     coefLambda=coef(model)[(nCoef[i]+1):length(coef(model))];#coefficients
     coefLambda[is.na(coefLambda)]=0;
-    parameters[coef_y[[i]]]=variable.names(model)[1:nCoef[i]];#Store coefficients names
+    x0_names[coef_y[[i]]]=variable.names(model)[1:nCoef[i]];#Store coefficients names
     Ggamma[[i]]=matrix(0,length(y1[[i]]),sum(n_z_variables));
     #sigma and ? calculation
     startCoef1=1;
@@ -266,10 +273,10 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     Ggamma[[i]]=Ggamma[[i]]/x0[sigma_last_index-n_outcome+i];#adjust for beta instead or rho
     yVariance[[i]]=x0[sigma_last_index-n_outcome+i]^2-yVariance[[i]]
     #Dealing with rho
-    rhoSigma[[i]]=coef(model)[(nCoef[i]+1):(nCoef[i]+n_selection_equations_max)];
-    rhoSigma[[i]][is.na(rhoSigma[[i]])]=0;
+    rho_multiply_sigma[[i]]=coef(model)[(nCoef[i]+1):(nCoef[i]+n_selection_equations_max)];
+    rho_multiply_sigma[[i]][is.na(rho_multiply_sigma[[i]])]=0;
     sigma[i]=x0[sigma_last_index-n_outcome+i];
-    rhoY[[i]]=rhoSigma[[i]]/sigma[i];
+    rhoY[[i]]=rho_multiply_sigma[[i]]/sigma[i];
   }
   #Delta method
   #G and triangle matrices
@@ -283,7 +290,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   {
     Q=as.matrix(X[[i]]);
     Id=diag(rep(1,length(yh1[[i]][,1])));
-    CovB[[i]]=sigma[i]^2*(solve(t(Q)%*%Q)%*%t(Q)%*%((Id-triangle[[i]])+Ggamma[[i]]%*%covmatrixGamma%*%t(Ggamma[[i]]))%*%Q%*%solve(t(Q)%*%Q));
+    CovB[[i]]=sigma[i]^2*(solve(t(Q)%*%Q)%*%t(Q)%*%((Id-triangle[[i]])+Ggamma[[i]]%*%covmatrix_gamma%*%t(Ggamma[[i]]))%*%Q%*%solve(t(Q)%*%Q));
     #Change covmatrix for summary
     newCoefs=coeftest(twostep[[i]], vcov. = CovB[[i]])
     twostepOLS[[i]]=twostep[[i]];
@@ -297,7 +304,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   }
   if (only_twostep) {return(list("model"=twostep, "covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, "sortList"=sortList));}
   #PAHSE 3: MLE with Two-step initial values
-  #Set lower and upper bound constraints for parameters
+  #Set lower and upper bound constraints for x0_names
   rhoSize=sigma_last_index-n_outcome;
   sizeAboveRho=length(x0)-rhoSize;
   lb=(c(rep(-1,rhoSize),rep(-Inf,sizeAboveRho)));
@@ -328,7 +335,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
       if (j>i & j<=n_selection_equations_max)
       {
         counter=counter+1;
-        parameters[counter]=paste(c("rhoZ",i,j), collapse = " ");
+        x0_names[counter]=paste(c("rhoZ",i,j), collapse = " ");
       }
     }
   }
@@ -337,17 +344,17 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     for (j in 1:n_selection_equations_max)
     {
       counter=counter+1;
-      parameters[counter]=paste(c("rhoY",i,j), collapse = " ");
+      x0_names[counter]=paste(c("rhoY",i,j), collapse = " ");
     }
   }
   for (i in 1:n_outcome)
   {
     counter=counter+1;
-    parameters[counter]=paste(c("sigma",i), collapse = " ");
+    x0_names[counter]=paste(c("sigma",i), collapse = " ");
   }
   #Calculating lambda for MLE
   #Calculating lambda
-  zTilde=matrix(list(), n_groups, 1);
+  z_tilde=matrix(list(), n_groups, 1);
   lambda_z=matrix(list(), n_groups, 1);
   lambda=matrix(list(), n_groups, 1);
   lambda2=matrix(list(), n_groups, 1);
@@ -360,7 +367,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   for (i in 1:n_groups)
   {
     Sigma[[i]]=Sigma0[rules[i,]!=0,rules[i,]!=0];
-    zTilde[[i]]=z[[i]]*NA;
+    z_tilde[[i]]=z[[i]]*NA;
     if (groups[i]!=0)
     {
       SigmaCond=as.matrix(Sigma[[i]]);
@@ -369,16 +376,16 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
         SigmaCond[,j]=SigmaCond[,j]*(-rules_no_ommit[[i]][j]);
         SigmaCond[j,]=SigmaCond[j,]*(-rules_no_ommit[[i]][j]);
         zij=z_variables[[i,rules_converter[[i]][j]]]%*%as.matrix(x0[coef_z[[rules_converter[[i]][j]]]]);#%predicted values for zi
-        zTilde[[i]][,j]=zij*z[[i]][,j];#%upper adjusted values
+        z_tilde[[i]][,j]=zij*z[[i]][,j];#%upper adjusted values
       }
-      FzTilde=pmnorm(as.matrix(zTilde[[i]]), varcov = SigmaCond);
-      lambdai=dF(zTilde[[i]],SigmaCond,0, denominator=FALSE)/FzTilde;#general lambda
+      FzTilde=pmnorm(as.matrix(z_tilde[[i]]), varcov = SigmaCond);
+      lambdai=dF(z_tilde[[i]],SigmaCond,0, denominator=FALSE)/FzTilde;#general lambda
       lambdai_z=z[[i]]*lambdai;#lambda sign adjusted
-      lambdai2=d2F(zTilde[[i]],SigmaCond,0)/FzTilde;#great lambda
+      lambdai2=d2F(z_tilde[[i]],SigmaCond,0)/FzTilde;#great lambda
       lambda_z[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda*zi
       lambda[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda
       lambda2[[i]]=array(0,dim=c(length(lambdai[,1]),n_selection_equations_max, n_selection_equations_max));#Big lambda
-      lambda_zTilde[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda1*zTilde
+      lambda_zTilde[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);#lambda1*z_tilde
       LAMBDA[[i]]=array(0,dim=c(length(lambdai[,1]),n_selection_equations_max, n_selection_equations_max));#Big lambda
       zG[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);
       zTildeG[[i]]=matrix(0,nrow = length(lambdai[,1]),ncol = n_selection_equations_max);
@@ -392,9 +399,9 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
           counterz1=0;
           lambda_z[[i]][,j]=lambdai_z[,counterz];
           lambda[[i]][,j]=lambdai[,counterz];
-          lambda_zTilde[[i]][,j]=lambdai[,counterz]*zTilde[[i]][,counterz];
+          lambda_zTilde[[i]][,j]=lambdai[,counterz]*z_tilde[[i]][,counterz];
           zG[[i]][,j]=z[[i]][,counterz];
-          zTildeG[[i]][,j]=zTilde[[i]][,counterz];
+          zTildeG[[i]][,j]=z_tilde[[i]][,counterz];
           #Hessian of lambda
           for (k in 1:n_selection_equations_max)
           {
@@ -430,9 +437,9 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
       zTildeOutcome[[groups[i]]]=rbind(zTildeOutcome[[groups[i]]],zTildeG[[i]]);
     }
   }
-  result=noquote(cbind(parameters,f$solution,stdev,pvalue));
+  result=noquote(cbind(x0_names,f$solution,stdev,pvalue));
   colnames(result)=c("Parameter","value","stdev","p-value");
   citation="Kossova, Elena & Potanin, Bogdan, 2018. 'Heckman method and switching regression model multivariate generalization,' Applied Econometrics, Publishing House 'SINERGIA PRESS', vol. 50, pages 114-143."
   print(paste("Please cite as :",citation));
-  return(list("mle"=list("result" = result, "coefficients"=f$solution,"stdev"=stdev,"p-value"=pvalue,"names"=parameters), "twostep"=list("model"=twostep,"covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, "x0"=x0_twostep), "logLikelihood"=-f$objective, "x0"=f$solution,"lambda"=lambdaG, "sortList"=sortList, "CovM"=CovM, "citation"=citation))
+  return(list("mle"=list("result" = result, "coefficients"=f$solution,"stdev"=stdev,"p-value"=pvalue,"names"=x0_names), "twostep"=list("model"=twostep,"covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, "x0"=x0_twostep), "logLikelihood"=-f$objective, "x0"=f$solution,"lambda"=lambdaG, "sortList"=sortList, "CovM"=CovM, "citation"=citation))
 }
