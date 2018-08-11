@@ -66,11 +66,15 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     n_outcome*(n_selection_equations_max+1);#index of the last sigma in parameter vector
   #Indexing rho in parameter vector
   start_coef<-sum(1:(n_selection_equations_max-1))*(n_selection_equations_max>1)+1;
-   rho_y_indices=matrix(list(), n_outcome, 1);
+  rho_y_indices=matrix(list(), n_outcome, 1);
+  print(n_outcome)
   for (i in 1:n_outcome)
   {
     end_coef=start_coef+n_selection_equations_max-1;
-     rho_y_indices[[i]]=start_coef:end_coef;
+    print(start_coef)
+    print(end_coef)
+    rho_y_indices[[i]]=start_coef:end_coef;
+    print(rho_y_indices[[i]])
     start_coef=end_coef+1;
   }
   #Names for different y_variables regressors
