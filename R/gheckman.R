@@ -91,7 +91,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   for (i in 1:n_selection_equations_max)
   {
     #-1 in order to exclude constant
-    x0[coef_z[[i]]]=coef_y(myGlm<-glm(I((z[z[,i]!=0,i]+1)/2)~.-1,data=data.frame(z_variables[[i]][z[,i]!=0,]),family=binomial(link="probit")));
+    x0[coef_z[[i]]]=coef(myGlm<-glm(I((z[z[,i]!=0,i]+1)/2)~.-1,data=data.frame(z_variables[[i]][z[,i]!=0,]),family=binomial(link="probit")));
     parameters[coef_z[[i]]]=all.vars(formula(myGlm)[-2]);
   }
   zhColnames=matrix(list(),n_selection_equations_max);#zhColnames
