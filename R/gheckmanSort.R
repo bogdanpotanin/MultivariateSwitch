@@ -130,7 +130,7 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     counter_z=0;
     if (n_selection_equations_max>1)
     {
-      z_pseudo=y_and_z[,2:(n_selection_equations+1)][y_and_z$sort_rank==i,];
+      z_pseudo=y_and_z[,2:(n_selection_equations_max+1)][y_and_z$sort_rank==i,];
       z[[i]]=matrix(ncol=n_selection_equations[i],nrow=dim(z_pseudo)[1]);#preinitialization
     }
     else
