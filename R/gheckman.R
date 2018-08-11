@@ -433,7 +433,6 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   result=noquote(cbind(parameters,f$solution,stdev,pvalue));
   colnames(result)=c("Parameter","value","stdev","p-value");
   citation="Kossova, Elena & Potanin, Bogdan, 2018. 'Heckman method and switching regression model multivariate generalization,' Applied Econometrics, Publishing House 'SINERGIA PRESS', vol. 50, pages 114-143."
-  print("Please cite as :");
-  print(citation);
-  return(list("mle"=list("result" = result, "coefficients"=f$solution,"stdev"=stdev,"p-value"=pvalue,"names"=parameters), "twostep"=list("model"=twostep,"covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, "x0"=x0_twostep), "logLikelihood"=-f$objective, "x0"=f$solution,"lambda"=lambdaG, "sortList"=sortList, "CovM"=CovM), "citation"=citation)
+  print(paste("Please cite as :",citation));
+  return(list("mle"=list("result" = result, "coefficients"=f$solution,"stdev"=stdev,"p-value"=pvalue,"names"=parameters), "twostep"=list("model"=twostep,"covmatrix"=CovB,"sigma"=sigma, "twostepLS"=twostepOLS, "x0"=x0_twostep), "logLikelihood"=-f$objective, "x0"=f$solution,"lambda"=lambdaG, "sortList"=sortList, "CovM"=CovM, "citation"=citation))
 }
