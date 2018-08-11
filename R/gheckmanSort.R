@@ -3,7 +3,7 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   #PHASE 1: Preparing data
   #Assigning main variables
   n_observations_total=NROW(y);#sample size
-  n_selection_equations=NCOL(z);#total number of selection equations
+  n_selection_equations_max=NCOL(z);#total number of selection equations
   z[is.na(z)]=0;#ommited values conversion to 0 code
   y_and_z=data.frame(y,z);#all dependend variables data frame
     #decoding y into observed and not
@@ -49,7 +49,7 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   #Creating rules_no_ommit variable
   rules_no_ommit=matrix(list(), n_groups, 1);
   rules_converter=matrix(list(), n_groups, 1);#rules_converter[[i]] gives rules_no_ommit i-th element index in rules
-  rules_index=1:n_selection_equations;#index columns of rules
+  rules_index=1:n_selection_equations_max;#index columns of rules
   for (i in 1:n_groups)
   {
     rules_no_ommit[[i]]=matrix(rules[i,rules[i,]!=0],nrow=1);#removing 0 from rules_no_ommit
@@ -62,14 +62,14 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   }
   #PHASE 2: Indexing data
   #Defining sigma_last_index
-  sigma_last_index<-sum(1:(n_selection_equations-1))*(n_selection_equations>1)+
-    n_outcome*(n_selection_equations+1);#index of the last sigma in parameter vector
+  sigma_last_index<-sum(1:(n_selection_equations_max-1))*(n_selection_equations_max>1)+
+    n_outcome*(n_selection_equations_max+1);#index of the last sigma in parameter vector
   #Indexing rho in parameter vector
-  start_coef<-sum(1:(n_selection_equations-1))*(n_selection_equations>1)+1;
+  start_coef<-sum(1:(n_selection_equations_max-1))*(n_selection_equations_max>1)+1;
    rho_y_indices=matrix(list(), n_outcome, 1);
   for (i in 1:n_outcome)
   {
-    end_coef=start_coef+n_selection_equations-1;
+    end_coef=start_coef+n_selection_equations_max-1;
      rho_y_indices[[i]]=start_coef:end_coef;
     start_coef=end_coef+1;
   }
@@ -82,31 +82,30 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     colnames(y_and_z)[ncol(y_and_z)]=y_variables_names[[i]];
   }
   #Names for different z_variables regressors
-  z_variables_names=matrix(list(), n_selection_equations, 1);
-  for (i in 1:n_selection_equations) #for each selection eqation
+  z_variables_names=matrix(list(), n_selection_equations_max, 1);
+  for (i in 1:n_selection_equations_max) #for each selection eqation
   {
     z_variables_names[[i]]=paste('z_variables',toString(i));
     y_and_z$new=z_variables[[i]];
     colnames(y_and_z)[ncol(y_and_z)]=z_variables_names[[i]];
   }
-  print(n_selection_equations)
-  n_z_variables=as.matrix(rep(0,n_selection_equations));#number of variables in z_variables[[i]]
-  for (i in (1:n_selection_equations))
+  n_z_variables=as.matrix(rep(0,n_selection_equations_max));#number of variables in z_variables[[i]]
+  for (i in (1:n_selection_equations_max))
   {
     n_z_variables[i]=NCOL(z_variables[[i]]);
   }
   #PHASE 3: grouping variables
   #Clearing in order to split among groupss
   y_variables=matrix(list(), n_groups, 1)
-  z_variables=matrix(list(), n_groups, n_selection_equations)
+  z_variables=matrix(list(), n_groups, n_selection_equations_max)
   z=matrix(list(), n_groups, 1)
   y=matrix(list(), n_groups, 1)
   #Sorting according to rules
   y_and_z$sort_rank=rep(0,n_observations_total);#creating variables ranking
   for (i in 1:n_groups)
   {
-    #Takes only each n_selection_equations element of ismember because of duplicates
-    #y_and_z$sort_rank[apply(y_and_z_rules[,2:(n_selection_equations+1)],1,function(x) all(x==rules_with_y[i,]))]=i;
+    #Takes only each n_selection_equations_max element of ismember because of duplicates
+    #y_and_z$sort_rank[apply(y_and_z_rules[,2:(n_selection_equations_max+1)],1,function(x) all(x==rules_with_y[i,]))]=i;
     y_and_z$sort_rank[apply(y_and_z_rules,1,function(x) all(x==rules_with_y[i,]))]=i;
   }
   y_and_z_rules<-NULL#free memmory
@@ -129,17 +128,17 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     }
       #division of z_variables
     counter_z=0;
-    if (n_selection_equations>1)
+    if (n_selection_equations_max>1)
     {
       z_pseudo=y_and_z[,2:(n_selection_equations+1)][y_and_z$sort_rank==i,];
       z[[i]]=matrix(ncol=n_selection_equations[i],nrow=dim(z_pseudo)[1]);#preinitialization
     }
     else
     {
-      z_pseudo=matrix(y_and_z[,2:(n_selection_equations+1)][y_and_z$sort_rank==i],ncol=1);
+      z_pseudo=matrix(y_and_z[,2:(n_selection_equations_max+1)][y_and_z$sort_rank==i],ncol=1);
       z[[i]]=matrix(ncol=n_selection_equations[i],nrow=length(z_pseudo));#preinitialization
     }
-    for (j in 1:n_selection_equations)
+    for (j in 1:n_selection_equations_max)
     {
       if (rules[i,j]!=0)
       {
@@ -160,11 +159,11 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     start_coef=end_coef+1;
   }
     #coefficients for z predictors
-  coef_z=matrix(list(), n_selection_equations, 1);#+1 greater then amount of parameters
+  coef_z=matrix(list(), n_selection_equations_max, 1);#+1 greater then amount of parameters
   coef_z[[1]]=as.matrix((end_coef+1):(end_coef+n_z_variables[1]));
-  if (n_selection_equations>1)
+  if (n_selection_equations_max>1)
   {
-  for (i in 2:n_selection_equations)
+  for (i in 2:n_selection_equations_max)
   {
     end_value=dim(coef_z[[i-1]])[1];
     coef_z[[i]]=as.matrix((coef_z[[i-1]][end_value]+1):(coef_z[[i-1]][end_value]+n_z_variables[i]));
@@ -177,6 +176,6 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     groups_observations[i]=NROW(y[[i]]);
   }
   return(list('y'=y, 'y_variables'=y_variables, 'z'=z, 'z_variables'=z_variables, 'groups'=groups, 'rules'=rules, 'n_groups'=n_groups, 'n_outcome'=n_outcome,
-              'rules_converter'=rules_converter, 'rules_no_ommit'=rules_no_ommit, 'n_selection_equations'=n_selection_equations, 'sigma_last_index'=sigma_last_index, 'n_selection_equations'=n_selection_equations, 'coef_y'=coef_y,
+              'rules_converter'=rules_converter, 'rules_no_ommit'=rules_no_ommit, 'n_selection_equations'=n_selection_equations, 'sigma_last_index'=sigma_last_index, 'n_selection_equations_max'=n_selection_equations_max, 'coef_y'=coef_y,
               'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, ' rho_y_indices'= rho_y_indices))
 }
