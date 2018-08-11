@@ -23,7 +23,7 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
   sigma=matrix(nrow=n_outcome,ncol=1);#disturbances for different outcomes
   for (i in 1:n_outcome)
   {
-    rhoY[[i]]=as.matrix(x[rho_y_indices[[i]]]);#correlations between z and y
+    rhoY[[i]]=as.matrix(x[rho_y_indices[[i]]]);#correlations between z and y disturbances
     sigma[i]=x[sigma_last_index-n_outcome+i];#sigma represents variance of y disturbances
   }
   #if (sigma==0) {return(Inf);}#For GenSa algorithm
@@ -39,6 +39,8 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
     {
       Sigma[[i]]=Sigma0;
       Sigma[[i]][1:(n_selection_equations_max+1),n_selection_equations_max+1]=t(c(rhoY[[i]],sigma[i]))*sigma[i];#sigma])*sigma in order to include sigma^2 in matrix
+      print(sigma[i])
+      print(rhoY[[i]])
       Sigma[[i]][n_selection_equations_max+1,1:n_selection_equations_max]=rhoY[[i]]*sigma[i];
     }
   }
