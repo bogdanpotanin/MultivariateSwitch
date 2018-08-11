@@ -220,7 +220,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     model=lm(y1[[i]]~.,data=X[[i]][,-1]);
     twostep[[i]]=model;
     nCoef[i]=length(x0[coef_y[[i]]])
-    x0[coef_y[[i]]]=coef_y(model)[1:nCoef[i]];#coefficients
+    x0[coef_y[[i]]]=coef(model)[1:nCoef[i]];#coefficients
     coefLambda=coef_y(model)[(nCoef[i]+1):length(coef_y(model))];#coefficients
     coefLambda[is.na(coefLambda)]=0;
     parameters[coef_y[[i]]]=variable.names(model)[1:nCoef[i]];#Store coefficients names
