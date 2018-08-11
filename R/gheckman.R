@@ -78,6 +78,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   nyh=sortList$n_y_variables;
   nzh=sortList$n_z_variables;
   rho_y_indices=sortList$rho_y_indices;
+  print(123)
   print(rho_y_indices)
   print(rho_y_indices[[1]])
   print(123)
