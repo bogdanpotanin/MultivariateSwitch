@@ -95,7 +95,7 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
     n_z_variables[i]=NCOL(z_variables[[i]]);
   }
   #PHASE 3: grouping variables
-  #Clearing in order to split among groupss
+  #Clearing in order to split among groups
   y_variables=matrix(list(), n_groups, 1)
   z_variables=matrix(list(), n_groups, n_selection_equations_max)
   z=matrix(list(), n_groups, 1)
@@ -175,7 +175,12 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   {
     groups_observations[i]=NROW(y[[i]]);
   }
+  rho_z_n=sum(1:(n_selection_equations_max-1));
   return(list('y'=y, 'y_variables'=y_variables, 'z'=z, 'z_variables'=z_variables, 'groups'=groups, 'rules'=rules, 'n_groups'=n_groups, 'n_outcome'=n_outcome,
               'rules_converter'=rules_converter, 'rules_no_ommit'=rules_no_ommit, 'n_selection_equations'=n_selection_equations, 'sigma_last_index'=sigma_last_index, 'n_selection_equations_max'=n_selection_equations_max, 'coef_y'=coef_y,
-              'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, 'rho_y_indices'= rho_y_indices))
+<<<<<<< HEAD
+              'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, 'rho_y_indices'= rho_y_indices, 'rho_z_n'=rho_z_n))
+=======
+              'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, 'rho_y_indices'= rho_y_indices, "rho_z_n"=rho_z_n))
+>>>>>>> 5959a61e60d343478c9f37902f8e570226346b7a
 }
