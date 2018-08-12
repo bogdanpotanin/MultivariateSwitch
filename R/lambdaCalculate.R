@@ -8,7 +8,7 @@ Sigma=matrix(list(), sort_list$n_groups, 1);
 Sigma_Cond=matrix(list(), sort_list$n_groups, sort_list$n_groups);
 Sigma_no_y=triangular(x0[1:sort_list$rho_z_n],rep(1,sort_list$n_selection_equations_max));
 F_z_tilde=matrix(list(), sort_list$n_groups, sort_list$n_groups);
-for (i in 1:n_groups)
+for (i in 1:sort_list$n_groups)
 {
   Sigma[[i]]=Sigma_no_y[sort_list$rules[i,]!=0,sort_list$rules[i,]!=0];#remove unobservable z
   z_tilde[[i]]=z[[i]]*NA;
@@ -28,7 +28,7 @@ for (i in 1:n_groups)
 #Lambdas
 lambda=matrix(list(), sort_list$n_groups, 1);#for groups
 lambda_outcome=matrix(list(), sort_list$n_outcome, 1);#for outcomes
-  for (i in 1:n_groups)
+  for (i in 1:sort_list$n_groups)
   {
     lambda[[i]]=matrix(0,nrow = sort_list$groups_observations[i],ncol = sort_list$n_selection_equations_max);#lambda
     lambda[[i]][,rules!=0]=dF(z_tilde[[i]],Sigma_Cond,0, denominator=FALSE)/F_z_tilde[[i]];#general lambda
