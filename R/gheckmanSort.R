@@ -175,8 +175,39 @@ gheckmanSort<-function(y, y_variables, z, z_variables, groups=NULL, rules=NULL, 
   {
     groups_observations[i]=NROW(y[[i]]);
   }
+  #Number of correlations between selection equations
   rho_z_n=sum(1:(n_selection_equations_max-1));
-  return(list('y'=y, 'y_variables'=y_variables, 'z'=z, 'z_variables'=z_variables, 'groups'=groups, 'rules'=rules, 'n_groups'=n_groups, 'n_outcome'=n_outcome,
+  #Combining y and y_variables by outcome
+  y_outcome=matrix(list(), n_outcome, 1);
+  y_variables_outcome=matrix(list(), n_outcome, 1);
+  outcome_observations=matrix(0, n_outcome, 1);
+  for (i in 1:n_groups)
+  {
+    if (groups[i]!=0)
+    {
+      y_outcome[[groups[i]]]=rbind(y_outcome[[groups[i]]],y[[i]]);
+      y_variables_outcome[[groups[i]]]=rbind(y_variables_outcome[[groups[i]]],y_variables[[i]]);
+      outcome_observations[groups[i]]=length(y_outcome[[groups[i]]]);
+    }
+  }
+  #Combining z and z_variables by outcome
+  z_outcome=matrix(list(), n_outcome, 1);
+  z_variables_outcome=matrix(list(), n_outcome, 1);
+  for (i in 1:n_groups)
+  {
+    if (groups[i]!=0)
+    {
+      z_outcome[[groups[i]]]=rbind(z_outcome[[groups[i]]],z[[i]]);
+      z_variables_outcome[[groups[i]]]=rbind(z_variables_outcome[[groups[i]]],z_variables[[i]]);
+    }
+  }
+  #Rho z indices
+  #Indexing rho in parameter vector
+  return(list('y'=y, 'y_variables'=y_variables, 'z'=z, 'z_variables'=z_variables,
+              'y_outcome'=y_outcome, 'y_variables_outcome'=y_variables_outcome,
+              'z_outcome'=z_outcome, 'z_variables_outcome'=z_variables_outcome,
+              'outcome_observations'=outcome_observations,
+              'groups'=groups, 'rules'=rules, 'n_groups'=n_groups, 'n_outcome'=n_outcome,
               'rules_converter'=rules_converter, 'rules_no_ommit'=rules_no_ommit, 'n_selection_equations'=n_selection_equations, 'sigma_last_index'=sigma_last_index, 'n_selection_equations_max'=n_selection_equations_max, 'coef_y'=coef_y,
               'coef_z'=coef_z, 'groups_observations'=groups_observations, 'n_y_variables'=n_y_variables, 'n_z_variables'=n_z_variables, 'rho_y_indices'= rho_y_indices, 'rho_z_n'=rho_z_n))
 }

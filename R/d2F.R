@@ -1,6 +1,6 @@
 d2F<-function (x,Sigma,mu,rho=FALSE)
 {
-  #Не прогонять лишний раз jk и kj
+  #Do not use twice jk and kj
   n=dim(x)[1]
   ns=dim(Sigma)[1]
   d2FValue=array(0,c(n,ns,ns))
