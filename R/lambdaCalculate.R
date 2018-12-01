@@ -3,7 +3,8 @@
 #' @param sort_list list of variables that gheckman method returns
 #' @param groups_indices_ascending groups for which you want to estimate labmdas. Insure that they go ascending order
 #' @param new_rules custom rules which correspond to different groups
-lambdaCalculate<-function(x0, sort_list, new_rules=NULL, groups_indices_ascending=NULL, is_1D=TRUE, is_2D=FALSE)
+lambdaCalculate<-function(x0, sort_list, new_rules=NULL, groups_indices_ascending=NULL, is_1D=TRUE, is_2D=FALSE,
+                          selection_equation_change_name=NULL, selection_equation_change_value=NULL)
 {
 #Make sort_list elements variables
 for (i in 1:length(sort_list))
@@ -52,6 +53,12 @@ for (i in groups_iterated)
     {
       Sigma_Cond[[i]][,j]=Sigma_Cond[[i]][,j]*(-rules_no_ommit[[i]][j]);
       Sigma_Cond[[i]][j,]=Sigma_Cond[[i]][j,]*(-rules_no_ommit[[i]][j]);
+      if(!is.null(selection_equation_change_name))#to ommit selection variable for ME and ATET
+      {
+        index_control=grepl(selection_equation_change_name,#index of variables to change
+        colnames(z_variables[[i,rules_converter[[i]][j]]]));
+        z_variables[[i,rules_converter[[i]][j]]][,index_control]=selection_equation_change_value;
+      }
       z_i_j=z_variables[[i,rules_converter[[i]][j]]]%*%as.matrix(x0[coef_z[[rules_converter[[i]][j]]]]);#%predicted values for zi
       z[[i]][,j]=z[[i]][,j]*sign(z[[i]][1,j]*rules_no_ommit[[i]][j]);
       z_tilde[[i]][,j]=z_i_j*z[[i]][,j];#%upper adjusted values
@@ -67,6 +74,7 @@ lambda_no_ommit=matrix(list(), n_groups, 1);#for groups without 0
 lambda_outcome_no_ommit=matrix(list(), n_outcome, 1);#for outcomes without 0
 z_tilde_outcome=matrix(list(), n_outcome, 1);#z_tilde for outcomes
 z_tilde_outcome_no_ommit=matrix(list(), n_outcome, 1);#z_tilde for outcomes
+z_tilde_with_ommit=matrix(list(), n_outcome, 1);#z_tilde including 0
 if(is_1D)
 {
   for (i in (groups_iterated)[groups[groups_iterated]!=0])
@@ -77,7 +85,9 @@ if(is_1D)
     lambda_no_ommit[[i]]=lambda[[i]][,rules[i,]!=0];
     lambda_outcome_no_ommit[[groups[i]]]=lambda_outcome[[groups[i]]][,rules[i,]!=0];
     z_tilde_outcome[[groups[i]]]=rbind(z_tilde_outcome[[groups[i]]],z_tilde[[i]]);
-    z_tilde_outcome_no_ommit[[groups[i]]]=z_tilde_outcome[[groups[i]]][,rules[i,]!=0];
+    z_tilde_outcome_no_ommit[[groups[i]]]=z_tilde_outcome[[groups[i]]];
+    z_tilde_with_ommit[[i]]=z_with_ommit[[i]]*0;
+    z_tilde_with_ommit[[i]][,rules[i,]!=0]=z_tilde[[i]];
   }
 }
   #Two dimensional
@@ -99,8 +109,10 @@ if(is_2D)
 list_return=list('lambda'=lambda, 'lambda_outcome'=lambda_outcome, 'lambda2'=lambda2, 'lambda2_outcome'=lambda2_outcome,
             'lambda_no_ommit'=lambda_no_ommit, 'lambda_outcome_no_ommit'=lambda_outcome_no_ommit,
             'z_tilde_outcome'=z_tilde_outcome, 'z_tilde_outcome_no_ommit'=z_tilde_outcome_no_ommit,
+            'z_tilde_with_ommit'=z_tilde_with_ommit,
             'lambda2_no_ommit'=lambda2_no_ommit, 'lambda2_outcome_no_ommit'=lambda2_outcome_no_ommit,
             'Sigma'=Sigma, 'Sigma_no_y'=Sigma_no_y, 'Sigma_Cond'=Sigma_Cond, 'z_tilde'=z_tilde, 'F_z_tilde'=F_z_tilde);
+sort_list[names(list_return)]=NULL
 sort_list=append(sort_list,list_return);
 return(sort_list)
 }

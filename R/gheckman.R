@@ -26,6 +26,7 @@
 #' possible combinations. Special 0 value for groups responsible for sample selection.
 gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=NULL,
                    selection4=NULL, selection5=NULL, groups=NULL, rules=NULL,
+                   selection_equations_names=rep(NA,5),
                    show_info=FALSE, only_twostep=FALSE,
                    opts=list("algorithm" = "NLOPT_LD_TNEWTON", "xtol_rel" = 1e-16, "print_level" = 1, maxeval = 1000000),
                    x1=NULL, remove_zero_columns=FALSE)
@@ -34,7 +35,8 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   y_variables=model.frame(formula = outcome, data=data, na.action = NULL);#data for main equation
   n_observations_total=length(y_variables[,1]);#total number of observations
   y_variables[rowSums(is.na(y_variables))>0,]=NA;#remove y that could not be calculated
-  y=y_variables[,1];#independend variable
+  y=y_variables[,1];#dependend variable
+  names(y)=names(y_variables)[1];#remebmer variable name
   y_variables[,1]=1;#intercept
   colnames(y_variables)[1]="intercept";
   #Data for selection equations
@@ -48,6 +50,10 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
       z_variables[[i]]=model.frame(formula = as.formula(get(selection)), data=data, na.action = NULL)
       z_variables[[i]][rowSums(is.na(z_variables[[i]]))>0,]=NA;#remove z that could not be calculated
       z[,i]=z_variables[[i]][,1];
+      if(is.na(selection_equations_names[i]))
+      {
+      selection_equations_names[i]=colnames(z_variables[[i]])[1];
+      }
       z_variables[[i]][,1]=rep(1,n_observations_total);#intercept
       colnames(z_variables[[i]])[1]="intercept";
       z_variables[[i]][is.na(z_variables[[i]])]=0;
@@ -61,6 +67,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   }
   #PHASE 1: Preparing data
   sort_list<-gheckmanSort(y, y_variables, z, z_variables, groups, rules, remove_zero_columns);
+  sort_list$selection_equations_names=selection_equations_names;
   #Make sort_list elements variables
   for (i in 1:length(sort_list))
   {
@@ -76,7 +83,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   x0=matrix(0,n_parameters);
   x0_names=vector(length = length(x0));#Store variables names
   #Get initial values
-  if (n_selection_equations_max==1) 
+  if (n_selection_equations_max==1)
     {
       z=matrix(z,ncol=1);
     }
@@ -96,11 +103,11 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   lb=c(rep(-0.9999999,rho_z_n),rep(0,n_parameters_y-rho_z_n),rep(-Inf,n_parameters-coef_z[[1]][1]+1));
   ub=c(rep(0.9999999,rho_z_n),rep(0,n_parameters_y-rho_z_n),rep(Inf,n_parameters-coef_z[[1]][1]+1));
   #Estimate coefficients and store them to x0
-  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables, 
-            y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, 
-            coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups, 
-            n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, 
-            n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, 
+  f<-nloptr(x0=x0, eval_f=gheckmanLikelihood,opts=opts, lb=lb, ub=ub, y=y, z_variables=z_variables,
+            y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations,
+            coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups*0, n_groups=n_groups,
+            n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter,
+            n_outcome=n_outcome, rules=rules, groups_observations=groups_observations,
             rho_y_indices=rho_y_indices, show_info=show_info, maximization=FALSE);
   x0=f$solution;
   #Storing covariance matrix
@@ -115,9 +122,6 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   #Twostep LS
   sort_list=gheckmanLS(x0, sort_list);
   sort_list=gheckmanLSAdjustCovariance(sort_list);
-  print(summary(sort_list$twostep_LS_unadjusted[[1]]))
-  print(sort_list$twostep_LS[[1]])
-  print(sort_list$sigma_twostep[1]);
   #Update variables
   for (i in 1:length(sort_list))
   {
@@ -125,12 +129,11 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   }
   x0[(sigma_last_index-n_outcome+1):sigma_last_index]=sigma_twostep;
   #Return the result for twostep
-  if (only_twostep) 
+  if (only_twostep)
   {
-    return(list('model'=twostep_LS, 'covmatrix'=Cov_B,'sigma'=sigma_twostep, 
+    return(list('model'=twostep_LS, 'covmatrix'=Cov_B,'sigma'=sigma_twostep,
                 'model_unadjusted'=twostep_LS_unadjusted, 'sort_list'=sort_list));
   }
-
   #PAHSE 3: MLE with Two-step initial values
   #Set lower and upper bound constraints for x0_names
   rho_n=sigma_last_index-n_outcome;
@@ -145,6 +148,7 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   #Standard deviations estimation
   st_dev=jacobian(func = gheckmanGradient, x = f$solution, y=y, z_variables=z_variables, y_variables=y_variables, rules_no_ommit=rules_no_ommit, n_selection_equations=n_selection_equations, coef_z=coef_z, sigma_last_index=sigma_last_index, coef_y=coef_y, groups=groups, n_groups=n_groups, n_selection_equations_max=n_selection_equations_max, rules_converter=rules_converter, n_outcome=n_outcome, rules=rules, groups_observations=groups_observations, rho_y_indices=rho_y_indices, show_info=FALSE);
   Cov_M=solve(st_dev)
+  sort_list$Cov_M=Cov_M;#save Covariance matrix to sort_list list
   st_dev=sqrt(diag(Cov_M));
   x0=f$solution;
   aSTD=pnorm(x0/st_dev);
@@ -154,6 +158,14 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
   {
     p_value[i]=1-max(aSTD[i],bSTD[i])+min(aSTD[i],bSTD[i]);
   }
+  #Recalculating lambda
+  sort_list=lambdaCalculate(x0=x0, sort_list=sort_list, is_2D = TRUE);
+  for (i in 1:length(sort_list))
+  {
+    do.call("<-",list(names(sort_list)[[i]], sort_list[[i]]));
+  }
+  sort_list$x0=f$solution;
+  x0=sort_list$x0;
   #Orginizing output
   counter=0;
   for (i in 1:n_selection_equations_max)
@@ -188,5 +200,5 @@ gheckman<-function(data, outcome, selection1=NULL, selection2=NULL, selection3=N
     #Citation
   citation="Kossova, Elena & Potanin, Bogdan, 2018. 'Heckman method and switching regression model multivariate generalization,' Applied Econometrics, Publishing House 'SINERGIA PRESS', vol. 50, pages 114-143."
   print(noquote(paste("Please cite as :",citation)));
-  return(list("mle"=list("result" = result, "coefficients"=x0,"st_dev"=st_dev,"p-value"=p_value), "twostep"=list("model"=twostep_LS,"covmatrix"=Cov_B,"sigma"=sigma, "twostep_LS"=twostep_LS_unadjusted, "x0"=sort_list$x0), "logLikelihood"=-f$objective, "x0"=x0, "sort_list"=sort_list, "Cov_M"=Cov_M, "citation"=citation))
+  return(list("mle"=list("result" = result, "coefficients"=x0,"st_dev"=st_dev,"p-value"=p_value), "twostep"=list("model"=twostep_LS,"covmatrix"=Cov_B,"sigma"=sigma_twostep, "twostep_LS"=twostep_LS_unadjusted, "x0"=sort_list$x0), "logLikelihood"=-f$objective, "x0"=x0, "sort_list"=sort_list, "Cov_M"=Cov_M, "citation"=citation))
 }

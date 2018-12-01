@@ -107,14 +107,16 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
   #Conditional covariance matrices and mean
   SigmaCond=matrix(list(), n_groups, 1);#array of conditional matrices for each groups
   k=matrix(list(), n_groups, 1);#argument of multinominal normal probability function
-  #print(Sigma[[1]])
   #Likelihood calculation for each groups
   for (i in (1:(n_groups)))
   {
     if (groups[i]!=0) #if we have observations for y in this groups
     {
       #Calculating conditional mean and covariance matrix for i-th groups
-      listCond=mvncond(mean=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]+1), sigma=Sigma[[groups[i]]][rules[i,]!=0,rules[i,]!=0], dependent.ind = 1:n_selection_equations[i], given.ind = n_selection_equations[i]+1, X.given=epsilon[[i]]);
+      listCond=mvncond(mean=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]+1), 
+                       sigma=Sigma[[groups[i]]][c(rules[i,]!=0,TRUE),c(rules[i,]!=0,TRUE)], 
+                       dependent.ind = 1:n_selection_equations[i], given.ind = n_selection_equations[i]+1, 
+                       X.given=epsilon[[i]]);
       SigmaCond[[i]]=listCond[[1]];
       meanCond=listCond[[2]];
       #meanCond1-meanCond
@@ -136,9 +138,18 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
     k[[i]]<-sweep((z[[i]]+meanCond),MARGIN=2,as.vector(rules_no_ommit[[i]]),'*');
     if (n_selection_equations[i]==2)
       {
+        tryCatch(
+          {
         rho=SigmaCond[[i]][1,2]/sqrt(SigmaCond[[i]][1,1]*SigmaCond[[i]][2,2]);#correlation for standtadtised distribution
         if (abs(rho)<=0.99) {observed1[[i]]=pbivnorm(x = cbind(k[[i]][,1]/sqrt(SigmaCond[[i]][1,1]), k[[i]][,2]/sqrt(SigmaCond[[i]][2,2])), rho = rho);}
         else {return(list(objective=maxNumber, gradient=rep(maxNumber,length(x))));}#if standartisation close to singular
+          },
+          error=function(cond)
+          {
+            observed1[[i]]=pmnorm(as.matrix(k[[i]]), varcov = SigmaCond[[i]]);
+            print(123)
+          }
+        )
       }
     else {observed1[[i]]=pmnorm(as.matrix(k[[i]]), varcov = SigmaCond[[i]]);}
     #Summarizing the results

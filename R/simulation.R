@@ -1,4 +1,6 @@
-simulation <- function(n, x=NULL, nX=NULL, y.index, z.index, group, zo3, beta=NULL, alpha=NULL, sigmaX=NULL, sigma=NULL, betaRange=NULL, sigmaRange=c(0,1), sigmaCor=FALSE)
+simulation <- function(n, x=NULL, nX=NULL, y.index, z.index, group, zo3, beta=NULL, alpha=NULL, 
+                       sigmaX=NULL, sigma=NULL, betaRange=NULL, sigmaRange=c(0,1), sigmaCor=FALSE,
+                       disturbances_mean=NULL)
 {
   if (is.null(nX)) nX=NCOL(x)
   #Number of selection equations
@@ -29,7 +31,11 @@ simulation <- function(n, x=NULL, nX=NULL, y.index, z.index, group, zo3, beta=NU
       sigma[,i]=sigma[,i]/divider
     }
   }
-  disturbances=mvrnorm(n,matrix(0,1,ns+maxGroup),sigma)
+  if(is.null(disturbances_mean))
+  {
+    disturbances_mean=matrix(0,1,ns+maxGroup)
+  }
+  disturbances=mvrnorm(n,disturbances_mean,sigma)
   #Storing independend variables for z
   zh=matrix(list(), ns, 1)
   for (i in 1:ns)
