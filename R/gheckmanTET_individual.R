@@ -1,7 +1,7 @@
 gheckmanTET_individual<-function(sort_list, group_treatment, group_control,
                        rule_treatment=NULL, rule_control=NULL,
                        outcome_treatment=NULL, outcome_control=NULL, at_point=NULL,
-                       standard_errors=TRUE)
+                       standard_errors=TRUE, endogeneous_treatment_variable_names=NULL)
 {
   #Make sort_list elements variables
   for (i in 1:length(sort_list))
@@ -25,11 +25,21 @@ gheckmanTET_individual<-function(sort_list, group_treatment, group_control,
   {
     outcome_control=groups[group_control]
   }
+  #Assigning coefficients
+  y_variables_names=colnames(y_variables[[outcome_treatment]]);
+  coef_y_treatment_ind=coef_y[[outcome_treatment]];
+  coef_y_control_ind=coef_y[[outcome_control]];
+  coef_y_treatment=x0[coef_y_treatment_ind];
+  coef_y_control=x0[coef_y_control_ind];
   #Calculating outcome variables observable parts
-  y_treatment_observed=as.matrix(y_variables[[group_treatment]])%*%
-    matrix(x0[coef_y[[outcome_treatment]]],ncol=1);
-  y_control_observed=as.matrix(y_variables[[group_treatment]])%*%
-    matrix(x0[coef_y[[outcome_control]]],ncol=1);
+  y_variables_treatment=y_variables[[group_treatment]];
+  y_treatment_observed=as.matrix(y_variables_treatment)%*%
+    matrix(coef_y_treatment,ncol=1);
+  y_variables_control=y_variables[[group_treatment]];
+  y_variables_control[,endogeneous_treatment_variable_names]=-1*   #-1 если нужно поменять знак, заменить потом на rule
+    y_variables_control[,endogeneous_treatment_variable_names];
+  y_control_observed=as.matrix(y_variables_control)%*%
+    matrix(coef_y_control,ncol=1);
   #Individual TET_observed
   TET_observed=y_treatment_observed-y_control_observed;
   #Calculating lambdas
@@ -44,17 +54,20 @@ gheckmanTET_individual<-function(sort_list, group_treatment, group_control,
   epsilon_treatment_for_treatment=matrix(x0[sigma_last_index-n_outcome+outcome_treatment]*
     matrix(x0[rho_y_indices[[outcome_treatment]]],ncol=1)*
     rule_treatment, nrow = 1);
-  epsilon_treatment_for_treatment=sweep(lambda_treatment,MARGIN=2,epsilon_treatment_for_treatment,'*');
+  epsilon_treatment_for_treatment=sweep(as.matrix(lambda_treatment),MARGIN=2,
+                                        as.matrix(epsilon_treatment_for_treatment),'*');
     #Epsilon control for treatment
   epsilon_control_for_treatment=matrix(x0[sigma_last_index-n_outcome+outcome_control]*
     matrix(x0[rho_y_indices[[outcome_control]]],ncol=1)*
     rule_treatment, nrow = 1);
-  epsilon_control_for_treatment=sweep(lambda_treatment,MARGIN=2,epsilon_control_for_treatment,'*');
+  epsilon_control_for_treatment=sweep(as.matrix(lambda_treatment),MARGIN=2,
+                                      as.matrix(epsilon_control_for_treatment),'*');
     #Epsilon control for control
   epsilon_control_for_control=matrix(x0[sigma_last_index-n_outcome+outcome_control]*
     matrix(x0[rho_y_indices[[outcome_control]]],ncol=1)*
     rule_control, nrow = 1);
-  epsilon_control_for_control=sweep(lambda_control,MARGIN=2,epsilon_control_for_control,'*');
+  epsilon_control_for_control=sweep(as.matrix(lambda_control),MARGIN=2,
+                                    as.matrix(epsilon_control_for_control),'*');
   #Individual TET_unobserved
   TET_unobserved=epsilon_treatment_for_treatment-epsilon_control_for_treatment;
   #Selection bias
@@ -71,14 +84,14 @@ gheckmanTET_individual<-function(sort_list, group_treatment, group_control,
   }
     #Standard errors for TET_observed
   TET_observed_std=(
-    as.matrix(y_variables[[group_treatment]])%*%
-    (Cov_M[coef_y[[group_treatment]],
-        coef_y[[group_treatment]]]+
-    Cov_M[coef_y[[group_control]],
-        coef_y[[group_control]]]-
-        2*Cov_M[coef_y[[group_treatment]],
-                coef_y[[group_control]]])%*%
-  t(as.matrix(y_variables[[group_treatment]]))
+    as.matrix(y_variables_treatment)%*%
+    (Cov_M[coef_y_treatment_ind,
+        coef_y_treatment_ind]+
+    Cov_M[coef_y_control_ind,
+        coef_y_control_ind]-
+        2*Cov_M[coef_y_treatment_ind,
+                coef_y_control_ind])%*%
+  t(as.matrix(y_variables_treatment))
 )
 TET_observed_std=sqrt(diag(TET_observed_std));
     #Standard errors for TET_unobserved
@@ -111,13 +124,13 @@ selection_bias_std=sqrt(diag(selection_bias_std));
       #Standard errors for total effect
       #It would be nice to vectorize
 total_effect_std=matrix(0,groups_observations,groups_observations)
-delta_indecies=c(coef_y[[group_treatment]],coef_y[[group_control]],
+delta_indecies=c(coef_y_treatment_ind,coef_y_control_ind,
                  rho_y_indices[[outcome_treatment]],rho_y_indices[[outcome_control]],
                  sigma_last_index-n_outcome+outcome_treatment,sigma_last_index-n_outcome+outcome_control);
 for(i in 1:groups_observations[group_treatment])
 {
-delta_gradient_beta_1=as.double(y_variables[[group_treatment]][i,]);
-delta_gradient_beta_2=as.double(-y_variables[[group_treatment]][i,]);
+delta_gradient_beta_1=as.double(y_variables_treatment[i,]);
+delta_gradient_beta_2=as.double(-y_variables_treatment[i,]);
 delta_gradient_rho_treatment=as.double(x0[sigma_last_index-n_outcome+outcome_treatment]*
                                          lambda_treatment_under_rule[i,]);
 delta_gradient_rho_control=as.double(-x0[sigma_last_index-n_outcome+outcome_control]*

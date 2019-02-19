@@ -14,12 +14,13 @@ gheckmanLSAdjustCovariance<-function(sort_list)
   sigma_twostep=matrix(0,n_outcome,1);
   for (i in (1:n_groups)[groups!=0])#for each outcome
   {
+    temporal_part=0;
     for (k in 1:n_selection_equations[i])#for each selection equation
     {
       sigma_twostep[groups[i]]=sigma_twostep[groups[i]]+
-        sum(rho_multiply_sigma[[groups[i]]][k]^2*z_tilde[[i]][,k]*lambda_no_ommit[[i]][,k]);
-      sigma_twostep[groups[i]]=sigma_twostep[groups[i]]+
-        sum((z[[i]][,k]*rho_multiply_sigma[[groups[i]]][k]*lambda_no_ommit[[i]][,k])^2);
+        sum(rho_multiply_sigma[[groups[i]]][k]^2*z_tilde[[i]][,k]*as.matrix(lambda_no_ommit[[i]])[,k]);
+      temporal_part=temporal_part+
+        (z[[i]][,k]*rho_multiply_sigma[[groups[i]]][k]*as.matrix(lambda_no_ommit[[i]])[,k]);
       for (j in 1:n_selection_equations[i])
       {
         if(k!=j)
@@ -33,6 +34,7 @@ gheckmanLSAdjustCovariance<-function(sort_list)
         }
       }
     }
+    sigma_twostep[groups[i]]=sigma_twostep[groups[i]]+sum(temporal_part^2)
   }
   #Calculating elements by group
   rho_y=matrix(list(),n_outcome,1);
