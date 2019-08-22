@@ -68,7 +68,9 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
   {
     for (i in 1:n_outcome)
     {
+      tryCatch({
       SigmaPositively=SigmaPositively+is.positive.definite(as.matrix(Sigma[[i]]), tol=1e-16);
+      }, error = function(cond) {SigmaPositively = 0;} )
     }
   }
   else {if (is.positive.semi.definite(Sigma0)){SigmaPositively=n_outcome;}}
@@ -113,9 +115,9 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
     if (groups[i]!=0) #if we have observations for y in this groups
     {
       #Calculating conditional mean and covariance matrix for i-th groups
-      listCond=mvncond(mean=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]+1), 
-                       sigma=Sigma[[groups[i]]][c(rules[i,]!=0,TRUE),c(rules[i,]!=0,TRUE)], 
-                       dependent.ind = 1:n_selection_equations[i], given.ind = n_selection_equations[i]+1, 
+      listCond=mvncond(mean=matrix(0,nrow=groups_observations[i],ncol=n_selection_equations[i]+1),
+                       sigma=Sigma[[groups[i]]][c(rules[i,]!=0,TRUE),c(rules[i,]!=0,TRUE)],
+                       dependent.ind = 1:n_selection_equations[i], given.ind = n_selection_equations[i]+1,
                        X.given=epsilon[[i]]);
       SigmaCond[[i]]=listCond[[1]];
       meanCond=listCond[[2]];

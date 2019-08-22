@@ -1,7 +1,8 @@
 gheckmanTET_individual<-function(sort_list, group_treatment, group_control,
                        rule_treatment=NULL, rule_control=NULL,
                        outcome_treatment=NULL, outcome_control=NULL, at_point=NULL,
-                       standard_errors=TRUE, endogeneous_treatment_variable_names=NULL)
+                       standard_errors=TRUE, endogeneous_treatment_variable_names=NULL,
+                       endogeneous_treatment_variable_style="plus-minus")
 {
   #Make sort_list elements variables
   for (i in 1:length(sort_list))
@@ -36,8 +37,20 @@ gheckmanTET_individual<-function(sort_list, group_treatment, group_control,
   y_treatment_observed=as.matrix(y_variables_treatment)%*%
     matrix(coef_y_treatment,ncol=1);
   y_variables_control=y_variables[[group_treatment]];
-  y_variables_control[,endogeneous_treatment_variable_names]=-1*   #-1 если нужно поменять знак, заменить потом на rule
-    y_variables_control[,endogeneous_treatment_variable_names];
+  names_y=endogeneous_treatment_variable_names
+  names_y=names_y[names_y%in%colnames(y_variables_control)]
+  if(!is.null(names_y))
+  {
+    if(endogeneous_treatment_variable_style=="plus-minus")
+    {
+      y_variables_control[,names_y]=-1*   #-1 если нужно поменять знак, заменить потом на rule
+      y_variables_control[,names_y];
+    }
+    else
+    {
+      y_variables_control[,names_y]=1-y_variables_control[,names_y];
+    }
+  }
   y_control_observed=as.matrix(y_variables_control)%*%
     matrix(coef_y_control,ncol=1);
   #Individual TET_observed
@@ -45,10 +58,13 @@ gheckmanTET_individual<-function(sort_list, group_treatment, group_control,
   #Calculating lambdas
   lambda_treatment=lambdaCalculate(x0 = x0,sort_list = sort_list,
                                    new_rules = rule_treatment,
-                                   groups_indices_ascending = group_treatment)$lambda_no_ommit[[1]];
+                                   groups_indices_ascending = group_treatment
+                                   )$lambda_no_ommit[[1]];
   lambda_control=lambdaCalculate(x0 = x0,sort_list = sort_list,
                                  new_rules = rule_control,
-                                 groups_indices_ascending = group_treatment)$lambda_no_ommit[[1]];
+                                 groups_indices_ascending = group_treatment,
+                                 selection_equation_change_name=endogeneous_treatment_variable_names
+                                 )$lambda_no_ommit[[1]];
   #Calculating epsilons
     #Epsilon treatment for treatment
   epsilon_treatment_for_treatment=matrix(x0[sigma_last_index-n_outcome+outcome_treatment]*
@@ -109,7 +125,7 @@ delta_indecies=c(rho_y_indices[[outcome_treatment]],rho_y_indices[[outcome_contr
                  sigma_last_index-n_outcome+outcome_treatment,sigma_last_index-n_outcome+outcome_control);
 delta_matrix=t(delta_gradient)%*%Cov_M[delta_indecies,delta_indecies]%*%delta_gradient;
       #Final part
-lambda_treatment_under_rule=sweep(lambda_treatment,MARGIN=2,rule_treatment,'*');
+lambda_treatment_under_rule=sweep(as.matrix(lambda_treatment),MARGIN=2,rule_treatment,'*');
 TET_unobserved_std=as.matrix(lambda_treatment_under_rule)%*%delta_matrix%*%t(as.matrix(lambda_treatment_under_rule));
 TET_unobserved_std=sqrt(diag(TET_unobserved_std));
       #Standard errors for selection_bias
@@ -118,7 +134,7 @@ TET_unobserved_std=sqrt(diag(TET_unobserved_std));
 delta_gradient_2=-rbind(delta_gradient_rho_control,delta_gradient_sigma_control);
 delta_indecies_2=c(rho_y_indices[[outcome_control]],sigma_last_index-n_outcome+outcome_control);
 delta_matrix_2=t(delta_gradient_2)%*%Cov_M[delta_indecies_2,delta_indecies_2]%*%delta_gradient_2;
-lambda_control_under_rule=sweep(lambda_control,MARGIN=2,rule_control,'*');
+lambda_control_under_rule=sweep(as.matrix(lambda_control),MARGIN=2,rule_control,'*');
 selection_bias_std=as.matrix(lambda_treatment_under_rule-lambda_control_under_rule)%*%delta_matrix_2%*%t(as.matrix(lambda_treatment_under_rule-lambda_control_under_rule));
 selection_bias_std=sqrt(diag(selection_bias_std));
       #Standard errors for total effect

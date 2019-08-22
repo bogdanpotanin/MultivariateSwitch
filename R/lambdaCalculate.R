@@ -57,7 +57,8 @@ for (i in groups_iterated)
       {
         index_control=grepl(selection_equation_change_name,#index of variables to change
         colnames(z_variables[[i,rules_converter[[i]][j]]]));
-        z_variables[[i,rules_converter[[i]][j]]][,index_control]=selection_equation_change_value;
+        z_variables[[i,rules_converter[[i]][j]]][,index_control]=
+          -z_variables[[i,rules_converter[[i]][j]]][,index_control];
       }
       z_i_j=z_variables[[i,rules_converter[[i]][j]]]%*%as.matrix(x0[coef_z[[rules_converter[[i]][j]]]]);#%predicted values for zi
       z[[i]][,j]=z[[i]][,j]*sign(z[[i]][1,j]*rules_no_ommit[[i]][j]);
