@@ -64,13 +64,14 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
   sigmaGradient=matrix(rep(0,n_outcome),ncol=1);
   #Disturbances and selection probabilities estimation
   SigmaPositively=0;
+  print(12345678)
   if(!is.null(Sigma[[1]]))
   {
     for (i in 1:n_outcome)
     {
       tryCatch({
       SigmaPositively=SigmaPositively+is.positive.definite(as.matrix(Sigma[[i]]), tol=1e-16);
-      }, error = function(cond) {SigmaPositively = 0;} )
+      }, error = function(cond) {SigmaPositively = 0; print(321);} )
     }
   }
   else {if (is.positive.semi.definite(Sigma0)){SigmaPositively=n_outcome;}}
@@ -92,6 +93,7 @@ gheckmanLikelihood<-function(x, y, z_variables, y_variables, rules_no_ommit, n_s
     if (!maximization) {return(list(objective=maxNumber, gradient=rep(maxNumber,length(x))));}
     else {return(list(objective=-maxNumber, gradient=rep(-maxNumber,length(x))));}
   }
+  print(123456789)
   #z selection probabilities
   z=matrix(list(), n_outcome, 1);
   for (i in 1:n_groups)
